@@ -112,6 +112,10 @@ public abstract class Creature {
         return BASE_SENSE_RADIUS * genome.getSenseRadius();
     }
 
+    public boolean isDead() {
+        return energy <= 0.0;
+    }
+
     double getMovementDistance(double tickDurationSeconds) {
         if (!Double.isFinite(tickDurationSeconds)
                 || tickDurationSeconds < 0) {
@@ -121,6 +125,34 @@ public abstract class Creature {
         }
 
         return getSpeed() * tickDurationSeconds;
+    }
+
+    void addEnergy(double amount) {
+        if (!Double.isFinite(amount) || amount < 0.0) {
+            throw new IllegalArgumentException(
+                    "Energy amount must be non-negative and finite"
+            );
+        }
+
+        double newEnergy = energy + amount;
+
+        if (!Double.isFinite(newEnergy)) {
+            throw new IllegalStateException(
+                    "Creature energy cannot become non-finite"
+            );
+        }
+
+        energy = newEnergy;
+    }
+
+    void consumeEnergy(double amount) {
+        if (!Double.isFinite(amount) || amount < 0.0) {
+            throw new IllegalArgumentException(
+                    "Energy cost must be non-negative and finite"
+            );
+        }
+
+        energy -= amount;
     }
 
     void moveTo(double x, double y) {

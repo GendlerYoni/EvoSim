@@ -317,4 +317,129 @@ class CreatureTest {
                 () -> herbivore.changeExplorationDirection(null)
         );
     }
+    @Test
+    void addsEnergy() {
+        Herbivore herbivore = createHerbivore();
+
+        herbivore.addEnergy(50.0);
+
+        assertEquals(
+                150.0,
+                herbivore.getEnergy(),
+                1e-9
+        );
+    }
+
+    @Test
+    void consumesEnergy() {
+        Herbivore herbivore = createHerbivore();
+
+        herbivore.consumeEnergy(25.0);
+
+        assertEquals(
+                75.0,
+                herbivore.getEnergy(),
+                1e-9
+        );
+    }
+
+    @Test
+    void energyCanFallBelowZero() {
+        Herbivore herbivore = createHerbivore();
+
+        herbivore.consumeEnergy(150.0);
+
+        assertEquals(
+                -50.0,
+                herbivore.getEnergy(),
+                1e-9
+        );
+    }
+
+    @Test
+    void creatureIsDeadWhenEnergyReachesZero() {
+        Herbivore herbivore = createHerbivore();
+
+        herbivore.consumeEnergy(100.0);
+
+        assertTrue(herbivore.isDead());
+    }
+
+    @Test
+    void creatureIsDeadWhenEnergyFallsBelowZero() {
+        Herbivore herbivore = createHerbivore();
+
+        herbivore.consumeEnergy(101.0);
+
+        assertTrue(herbivore.isDead());
+    }
+
+    @Test
+    void creatureIsAliveWithPositiveEnergy() {
+        Herbivore herbivore = createHerbivore();
+
+        assertFalse(herbivore.isDead());
+    }
+
+    @Test
+    void deadCreatureCanRecoverByGainingEnergy() {
+        Herbivore herbivore = createHerbivore();
+
+        herbivore.consumeEnergy(101.0);
+
+        assertTrue(herbivore.isDead());
+
+        herbivore.addEnergy(100.0);
+
+        assertEquals(
+                99.0,
+                herbivore.getEnergy(),
+                1e-9
+        );
+        assertFalse(herbivore.isDead());
+    }
+
+    @Test
+    void rejectsInvalidEnergyGain() {
+        Herbivore herbivore = createHerbivore();
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> herbivore.addEnergy(-1.0)
+        );
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> herbivore.addEnergy(Double.NaN)
+        );
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> herbivore.addEnergy(
+                        Double.POSITIVE_INFINITY
+                )
+        );
+    }
+
+    @Test
+    void rejectsInvalidEnergyCost() {
+        Herbivore herbivore = createHerbivore();
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> herbivore.consumeEnergy(-1.0)
+        );
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> herbivore.consumeEnergy(Double.NaN)
+        );
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> herbivore.consumeEnergy(
+                        Double.POSITIVE_INFINITY
+                )
+        );
+    }
 }

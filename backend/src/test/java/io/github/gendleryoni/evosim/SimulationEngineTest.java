@@ -19,7 +19,8 @@ class SimulationEngineTest {
         return new SimulationConfig(
                 1000.0,
                 800.0,
-                initialGenome
+                initialGenome,
+                12345L
         );
     }
 
@@ -75,5 +76,53 @@ class SimulationEngineTest {
         }
 
         assertEquals(1.0, engine.getSimulationTimeSeconds(), 0.000001);
+    }
+
+    @Test
+    void createsHerbivoreAndAddsItToWorld() {
+        SimulationEngine engine =
+                new SimulationEngine(createDefaultConfig());
+
+        Herbivore herbivore = engine.createHerbivore(
+                50.0,
+                50.0,
+                100.0,
+                1,
+                engine.getConfig().getInitialGenome(),
+                Direction.NORTH
+        );
+
+        assertEquals(1, engine.getWorld().getHerbivores().size());
+        assertSame(
+                herbivore,
+                engine.getWorld().getHerbivores().get(0)
+        );
+    }
+
+    @Test
+    void assignsUniqueSequentialCreatureIds() {
+        SimulationEngine engine =
+                new SimulationEngine(createDefaultConfig());
+
+        Herbivore first = engine.createHerbivore(
+                50.0,
+                50.0,
+                100.0,
+                1,
+                engine.getConfig().getInitialGenome(),
+                Direction.NORTH
+        );
+
+        Herbivore second = engine.createHerbivore(
+                60.0,
+                60.0,
+                100.0,
+                1,
+                engine.getConfig().getInitialGenome(),
+                Direction.SOUTH
+        );
+
+        assertEquals(1, first.getId());
+        assertEquals(2, second.getId());
     }
 }
