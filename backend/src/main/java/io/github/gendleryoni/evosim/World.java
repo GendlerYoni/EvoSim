@@ -162,4 +162,71 @@ public class World {
                 && y >= radius
                 && y <= height - radius;
     }
+
+    boolean moveCreature(
+            Creature creature,
+            Vector2D direction,
+            double distance
+    ) {
+        if (creature == null) {
+            throw new IllegalArgumentException(
+                    "Creature cannot be null"
+            );
+        }
+
+        if (direction == null) {
+            throw new IllegalArgumentException(
+                    "Movement direction cannot be null"
+            );
+        }
+
+        if (!Double.isFinite(distance) || distance < 0) {
+            throw new IllegalArgumentException(
+                    "Movement distance must be non-negative and finite"
+            );
+        }
+
+        if (!herbivores.contains(creature)) {
+            throw new IllegalStateException(
+                    "Creature does not exist in world"
+            );
+        }
+
+        Vector2D normalizedDirection = direction.normalized();
+
+        double proposedX =
+                creature.getX()
+                        + normalizedDirection.x() * distance;
+
+        double proposedY =
+                creature.getY()
+                        + normalizedDirection.y() * distance;
+
+        double radius = creature.getRadius();
+
+        double minX = radius;
+        double maxX = width - radius;
+        double minY = radius;
+        double maxY = height - radius;
+
+        boolean hitWall =
+                proposedX < minX
+                        || proposedX > maxX
+                        || proposedY < minY
+                        || proposedY > maxY;
+
+        double finalX = Math.max(
+                minX,
+                Math.min(proposedX, maxX)
+        );
+
+        double finalY = Math.max(
+                minY,
+                Math.min(proposedY, maxY)
+        );
+
+        creature.moveTo(finalX, finalY);
+
+        return hitWall;
+    }
 }

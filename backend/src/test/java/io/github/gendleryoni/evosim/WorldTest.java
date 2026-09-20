@@ -448,4 +448,241 @@ class WorldTest {
         assertEquals(1, world.getHerbivores().size());
         assertSame(herbivore, world.getHerbivores().get(0));
     }
+    @Test
+    void movesCreatureNormally() {
+        World world = new World(100.0, 100.0);
+        Herbivore herbivore = createHerbivore(50.0, 50.0);
+
+        world.addHerbivore(herbivore);
+
+        boolean hitWall = world.moveCreature(
+                herbivore,
+                new Vector2D(1.0, 0.0),
+                5.0
+        );
+
+        assertFalse(hitWall);
+        assertEquals(55.0, herbivore.getX(), 1e-9);
+        assertEquals(50.0, herbivore.getY(), 1e-9);
+    }
+
+    @Test
+    void normalizesDiagonalMovement() {
+        World world = new World(100.0, 100.0);
+        Herbivore herbivore = createHerbivore(50.0, 50.0);
+
+        world.addHerbivore(herbivore);
+
+        boolean hitWall = world.moveCreature(
+                herbivore,
+                new Vector2D(1.0, 1.0),
+                10.0
+        );
+
+        double expectedOffset = 10.0 / Math.sqrt(2.0);
+
+        assertFalse(hitWall);
+        assertEquals(
+                50.0 + expectedOffset,
+                herbivore.getX(),
+                1e-9
+        );
+        assertEquals(
+                50.0 + expectedOffset,
+                herbivore.getY(),
+                1e-9
+        );
+    }
+
+    @Test
+    void clampsCreatureAtLeftWall() {
+        World world = new World(100.0, 100.0);
+        Herbivore herbivore = createHerbivore(2.0, 50.0);
+
+        world.addHerbivore(herbivore);
+
+        boolean hitWall = world.moveCreature(
+                herbivore,
+                new Vector2D(-1.0, 0.0),
+                10.0
+        );
+
+        assertTrue(hitWall);
+        assertEquals(1.0, herbivore.getX(), 1e-9);
+        assertEquals(50.0, herbivore.getY(), 1e-9);
+    }
+
+    @Test
+    void clampsCreatureAtRightWall() {
+        World world = new World(100.0, 100.0);
+        Herbivore herbivore = createHerbivore(98.0, 50.0);
+
+        world.addHerbivore(herbivore);
+
+        boolean hitWall = world.moveCreature(
+                herbivore,
+                new Vector2D(1.0, 0.0),
+                10.0
+        );
+
+        assertTrue(hitWall);
+        assertEquals(99.0, herbivore.getX(), 1e-9);
+        assertEquals(50.0, herbivore.getY(), 1e-9);
+    }
+
+    @Test
+    void clampsCreatureAtTopWall() {
+        World world = new World(100.0, 100.0);
+        Herbivore herbivore = createHerbivore(50.0, 2.0);
+
+        world.addHerbivore(herbivore);
+
+        boolean hitWall = world.moveCreature(
+                herbivore,
+                new Vector2D(0.0, -1.0),
+                10.0
+        );
+
+        assertTrue(hitWall);
+        assertEquals(50.0, herbivore.getX(), 1e-9);
+        assertEquals(1.0, herbivore.getY(), 1e-9);
+    }
+
+    @Test
+    void clampsCreatureAtBottomWall() {
+        World world = new World(100.0, 100.0);
+        Herbivore herbivore = createHerbivore(50.0, 98.0);
+
+        world.addHerbivore(herbivore);
+
+        boolean hitWall = world.moveCreature(
+                herbivore,
+                new Vector2D(0.0, 1.0),
+                10.0
+        );
+
+        assertTrue(hitWall);
+        assertEquals(50.0, herbivore.getX(), 1e-9);
+        assertEquals(99.0, herbivore.getY(), 1e-9);
+    }
+
+    @Test
+    void slidesAlongWallWhenOnlyOneAxisExceedsBounds() {
+        World world = new World(100.0, 100.0);
+        Herbivore herbivore = createHerbivore(50.0, 2.0);
+
+        world.addHerbivore(herbivore);
+
+        boolean hitWall = world.moveCreature(
+                herbivore,
+                new Vector2D(1.0, -1.0),
+                10.0
+        );
+
+        double expectedX =
+                50.0 + 10.0 / Math.sqrt(2.0);
+
+        assertTrue(hitWall);
+        assertEquals(expectedX, herbivore.getX(), 1e-9);
+        assertEquals(1.0, herbivore.getY(), 1e-9);
+    }
+
+    @Test
+    void zeroVectorDoesNotMoveCreature() {
+        World world = new World(100.0, 100.0);
+        Herbivore herbivore = createHerbivore(50.0, 50.0);
+
+        world.addHerbivore(herbivore);
+
+        boolean hitWall = world.moveCreature(
+                herbivore,
+                new Vector2D(0.0, 0.0),
+                10.0
+        );
+
+        assertFalse(hitWall);
+        assertEquals(50.0, herbivore.getX(), 1e-9);
+        assertEquals(50.0, herbivore.getY(), 1e-9);
+    }
+
+    @Test
+    void rejectsInvalidMovementDistance() {
+        World world = new World(100.0, 100.0);
+        Herbivore herbivore = createHerbivore(50.0, 50.0);
+
+        world.addHerbivore(herbivore);
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> world.moveCreature(
+                        herbivore,
+                        Direction.EAST.getVector(),
+                        -1.0
+                )
+        );
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> world.moveCreature(
+                        herbivore,
+                        Direction.EAST.getVector(),
+                        Double.NaN
+                )
+        );
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> world.moveCreature(
+                        herbivore,
+                        Direction.EAST.getVector(),
+                        Double.POSITIVE_INFINITY
+                )
+        );
+    }
+
+    @Test
+    void rejectsNullCreatureMovement() {
+        World world = new World(100.0, 100.0);
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> world.moveCreature(
+                        null,
+                        Direction.EAST.getVector(),
+                        1.0
+                )
+        );
+    }
+
+    @Test
+    void rejectsNullMovementDirection() {
+        World world = new World(100.0, 100.0);
+        Herbivore herbivore = createHerbivore(50.0, 50.0);
+
+        world.addHerbivore(herbivore);
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> world.moveCreature(
+                        herbivore,
+                        null,
+                        1.0
+                )
+        );
+    }
+
+    @Test
+    void rejectsMovingCreatureThatDoesNotBelongToWorld() {
+        World world = new World(100.0, 100.0);
+        Herbivore herbivore = createHerbivore(50.0, 50.0);
+
+        assertThrows(
+                IllegalStateException.class,
+                () -> world.moveCreature(
+                        herbivore,
+                        Direction.EAST.getVector(),
+                        1.0
+                )
+        );
+    }
 }
