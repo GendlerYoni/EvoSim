@@ -4,6 +4,7 @@ public abstract class Creature {
 
     private static final double BASE_CREATURE_RADIUS = 1.0;
     private static final double BASE_SPEED = 5.0;
+    private static final double BASE_SENSE_RADIUS = 15.0;
 
     private final int id;
     private double x;
@@ -105,6 +106,10 @@ public abstract class Creature {
 
     public double getSpeed() {
         return BASE_SPEED * genome.getSpeed();
+    }
+
+    public double getSenseRadius() {
+        return BASE_SENSE_RADIUS * genome.getSenseRadius();
     }
 
     double getMovementDistance(double tickDurationSeconds) {

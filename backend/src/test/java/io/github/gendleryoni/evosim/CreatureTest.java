@@ -78,6 +78,34 @@ class CreatureTest {
     }
 
     @Test
+    void calculatesPhysicalSenseRadiusFromGenome() {
+        Genome genome = new Genome(
+                1.0,
+                1.0,
+                2.0,
+                1.0,
+                1.0,
+                180.0
+        );
+
+        Herbivore herbivore = new Herbivore(
+                1,
+                50.0,
+                75.0,
+                100.0,
+                1,
+                genome,
+                Direction.NORTH
+        );
+
+        assertEquals(
+                30.0,
+                herbivore.getSenseRadius(),
+                1e-9
+        );
+    }
+
+    @Test
     void calculatesMovementDistanceFromTickDuration() {
         Herbivore herbivore = createHerbivore();
 
