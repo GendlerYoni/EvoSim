@@ -8,7 +8,8 @@ public class Herbivore extends Creature {
             double y,
             double energy,
             int generation,
-            Genome genome
+            Genome genome,
+            Direction explorationDirection
     ) {
         super(
                 id,
@@ -16,7 +17,8 @@ public class Herbivore extends Creature {
                 y,
                 energy,
                 generation,
-                genome
+                genome,
+                explorationDirection
         );
     }
 }

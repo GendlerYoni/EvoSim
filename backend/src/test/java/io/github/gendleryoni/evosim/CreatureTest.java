@@ -17,6 +17,18 @@ class CreatureTest {
         );
     }
 
+    private Herbivore createHerbivore() {
+        return new Herbivore(
+                1,
+                50.0,
+                75.0,
+                100.0,
+                1,
+                createGenome(),
+                Direction.NORTH
+        );
+    }
+
     @Test
     void createsHerbivoreWithValidState() {
         Genome genome = createGenome();
@@ -27,7 +39,8 @@ class CreatureTest {
                 75.0,
                 100.0,
                 1,
-                genome
+                genome,
+                Direction.NORTH
         );
 
         assertEquals(1, herbivore.getId());
@@ -36,6 +49,70 @@ class CreatureTest {
         assertEquals(100.0, herbivore.getEnergy());
         assertEquals(1, herbivore.getGeneration());
         assertSame(genome, herbivore.getGenome());
+        assertEquals(
+                Direction.NORTH,
+                herbivore.getExplorationDirection()
+        );
+    }
+
+    @Test
+    void calculatesPhysicalRadiusFromGenomeSize() {
+        Herbivore herbivore = createHerbivore();
+
+        assertEquals(
+                1.0,
+                herbivore.getRadius(),
+                1e-9
+        );
+    }
+
+    @Test
+    void calculatesPhysicalSpeedFromGenomeSpeed() {
+        Herbivore herbivore = createHerbivore();
+
+        assertEquals(
+                5.0,
+                herbivore.getSpeed(),
+                1e-9
+        );
+    }
+
+    @Test
+    void calculatesMovementDistanceFromTickDuration() {
+        Herbivore herbivore = createHerbivore();
+
+        double distance =
+                herbivore.getMovementDistance(0.05);
+
+        assertEquals(
+                0.25,
+                distance,
+                1e-9
+        );
+    }
+
+    @Test
+    void movesToNewPosition() {
+        Herbivore herbivore = createHerbivore();
+
+        herbivore.moveTo(60.0, 80.0);
+
+        assertEquals(60.0, herbivore.getX());
+        assertEquals(80.0, herbivore.getY());
+    }
+
+    @Test
+    void changesExplorationDirection() {
+        Herbivore herbivore = createHerbivore();
+
+        herbivore.changeExplorationDirection(
+                Direction.SOUTH_EAST
+        );
+
+        assertEquals(
+                Direction.SOUTH_EAST,
+                herbivore.getExplorationDirection()
+        );
     }
 
     @Test
@@ -48,7 +125,8 @@ class CreatureTest {
                         75.0,
                         100.0,
                         1,
-                        createGenome()
+                        createGenome(),
+                        Direction.NORTH
                 )
         );
     }
@@ -63,7 +141,8 @@ class CreatureTest {
                         75.0,
                         100.0,
                         1,
-                        createGenome()
+                        createGenome(),
+                        Direction.NORTH
                 )
         );
 
@@ -75,7 +154,8 @@ class CreatureTest {
                         Double.POSITIVE_INFINITY,
                         100.0,
                         1,
-                        createGenome()
+                        createGenome(),
+                        Direction.NORTH
                 )
         );
     }
@@ -90,7 +170,8 @@ class CreatureTest {
                         75.0,
                         0.0,
                         1,
-                        createGenome()
+                        createGenome(),
+                        Direction.NORTH
                 )
         );
 
@@ -102,7 +183,8 @@ class CreatureTest {
                         75.0,
                         Double.NaN,
                         1,
-                        createGenome()
+                        createGenome(),
+                        Direction.NORTH
                 )
         );
     }
@@ -117,7 +199,8 @@ class CreatureTest {
                         75.0,
                         100.0,
                         0,
-                        createGenome()
+                        createGenome(),
+                        Direction.NORTH
                 )
         );
     }
@@ -132,8 +215,78 @@ class CreatureTest {
                         75.0,
                         100.0,
                         1,
+                        null,
+                        Direction.NORTH
+                )
+        );
+    }
+
+    @Test
+    void rejectsNullExplorationDirection() {
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> new Herbivore(
+                        1,
+                        50.0,
+                        75.0,
+                        100.0,
+                        1,
+                        createGenome(),
                         null
                 )
+        );
+    }
+
+    @Test
+    void rejectsInvalidMovementDistanceTickDuration() {
+        Herbivore herbivore = createHerbivore();
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> herbivore.getMovementDistance(-0.01)
+        );
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> herbivore.getMovementDistance(Double.NaN)
+        );
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> herbivore.getMovementDistance(
+                        Double.POSITIVE_INFINITY
+                )
+        );
+    }
+
+    @Test
+    void rejectsMovingToNonFinitePosition() {
+        Herbivore herbivore = createHerbivore();
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> herbivore.moveTo(
+                        Double.NaN,
+                        50.0
+                )
+        );
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> herbivore.moveTo(
+                        50.0,
+                        Double.POSITIVE_INFINITY
+                )
+        );
+    }
+
+    @Test
+    void rejectsNullExplorationDirectionChange() {
+        Herbivore herbivore = createHerbivore();
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> herbivore.changeExplorationDirection(null)
         );
     }
 }
