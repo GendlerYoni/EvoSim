@@ -8,6 +8,29 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class WorldTest {
 
+    private Genome createGenome() {
+        return new Genome(
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                180.0
+        );
+    }
+
+    private Herbivore createHerbivore(double x, double y) {
+        return new Herbivore(
+                1,
+                x,
+                y,
+                100.0,
+                1,
+                createGenome(),
+                Direction.NORTH
+        );
+    }
+
     @Test
     void storesConfiguredDimensions() {
         World world = new World(100.0, 200.0);
@@ -77,27 +100,38 @@ class WorldTest {
     }
 
     @Test
-    void rejectsFoodOutsideWorldBounds() {
+    void allowsFoodExactlyOnPhysicalWorldBoundary() {
+        World world = new World(100.0, 100.0);
+
+        Food topLeft = world.addFood(3.0, 3.0);
+        Food bottomRight = world.addFood(97.0, 97.0);
+
+        assertNotNull(topLeft);
+        assertNotNull(bottomRight);
+    }
+
+    @Test
+    void rejectsFoodWhoseBodyExtendsOutsideWorldBounds() {
         World world = new World(100.0, 100.0);
 
         assertThrows(
                 IllegalArgumentException.class,
-                () -> world.addFood(-1.0, 50.0)
+                () -> world.addFood(2.9, 50.0)
         );
 
         assertThrows(
                 IllegalArgumentException.class,
-                () -> world.addFood(101.0, 50.0)
+                () -> world.addFood(97.1, 50.0)
         );
 
         assertThrows(
                 IllegalArgumentException.class,
-                () -> world.addFood(50.0, -1.0)
+                () -> world.addFood(50.0, 2.9)
         );
 
         assertThrows(
                 IllegalArgumentException.class,
-                () -> world.addFood(50.0, 101.0)
+                () -> world.addFood(50.0, 97.1)
         );
     }
 
@@ -112,7 +146,10 @@ class WorldTest {
 
         assertThrows(
                 IllegalArgumentException.class,
-                () -> world.addFood(50.0, Double.POSITIVE_INFINITY)
+                () -> world.addFood(
+                        50.0,
+                        Double.POSITIVE_INFINITY
+                )
         );
     }
 
@@ -160,7 +197,11 @@ class WorldTest {
         Food farFood = world.addFood(70.0, 70.0);
 
         List<Food> nearbyFoods =
-                world.findFoodWithinRadius(50.0, 50.0, 5.0);
+                world.findFoodWithinRadius(
+                        50.0,
+                        50.0,
+                        5.0
+                );
 
         assertEquals(1, nearbyFoods.size());
         assertSame(closeFood, nearbyFoods.get(0));
@@ -174,7 +215,11 @@ class WorldTest {
         Food food = world.addFood(53.0, 54.0);
 
         List<Food> nearbyFoods =
-                world.findFoodWithinRadius(50.0, 50.0, 5.0);
+                world.findFoodWithinRadius(
+                        50.0,
+                        50.0,
+                        5.0
+                );
 
         assertEquals(1, nearbyFoods.size());
         assertSame(food, nearbyFoods.get(0));
@@ -188,7 +233,11 @@ class WorldTest {
         world.addFood(50.1, 50.0);
 
         List<Food> nearbyFoods =
-                world.findFoodWithinRadius(50.0, 50.0, 0.0);
+                world.findFoodWithinRadius(
+                        50.0,
+                        50.0,
+                        0.0
+                );
 
         assertEquals(1, nearbyFoods.size());
         assertSame(exactFood, nearbyFoods.get(0));
@@ -200,7 +249,11 @@ class WorldTest {
 
         assertThrows(
                 IllegalArgumentException.class,
-                () -> world.findFoodWithinRadius(50.0, 50.0, -1.0)
+                () -> world.findFoodWithinRadius(
+                        50.0,
+                        50.0,
+                        -1.0
+                )
         );
 
         assertThrows(
@@ -252,14 +305,147 @@ class WorldTest {
         Food food = world.addFood(50.0, 50.0);
 
         List<Food> nearbyFoods =
-                world.findFoodWithinRadius(50.0, 50.0, 10.0);
+                world.findFoodWithinRadius(
+                        50.0,
+                        50.0,
+                        10.0
+                );
 
         nearbyFoods.clear();
 
         List<Food> secondQuery =
-                world.findFoodWithinRadius(50.0, 50.0, 10.0);
+                world.findFoodWithinRadius(
+                        50.0,
+                        50.0,
+                        10.0
+                );
 
         assertEquals(1, secondQuery.size());
         assertSame(food, secondQuery.get(0));
+    }
+
+    @Test
+    void addsHerbivoreInsideWorldBounds() {
+        World world = new World(100.0, 100.0);
+        Herbivore herbivore = createHerbivore(50.0, 50.0);
+
+        world.addHerbivore(herbivore);
+
+        assertEquals(1, world.getHerbivores().size());
+        assertSame(herbivore, world.getHerbivores().get(0));
+    }
+
+    @Test
+    void allowsHerbivoreExactlyOnPhysicalWorldBoundary() {
+        World world = new World(100.0, 100.0);
+
+        Herbivore topLeft = createHerbivore(1.0, 1.0);
+        Herbivore bottomRight = new Herbivore(
+                2,
+                99.0,
+                99.0,
+                100.0,
+                1,
+                createGenome(),
+                Direction.NORTH
+        );
+
+        world.addHerbivore(topLeft);
+        world.addHerbivore(bottomRight);
+
+        assertEquals(2, world.getHerbivores().size());
+    }
+
+    @Test
+    void rejectsHerbivoreWhoseBodyExtendsOutsideWorldBounds() {
+        World world = new World(100.0, 100.0);
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> world.addHerbivore(
+                        createHerbivore(0.9, 50.0)
+                )
+        );
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> world.addHerbivore(
+                        createHerbivore(99.1, 50.0)
+                )
+        );
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> world.addHerbivore(
+                        createHerbivore(50.0, 0.9)
+                )
+        );
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> world.addHerbivore(
+                        createHerbivore(50.0, 99.1)
+                )
+        );
+    }
+
+    @Test
+    void rejectsAddingNullHerbivore() {
+        World world = new World(100.0, 100.0);
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> world.addHerbivore(null)
+        );
+    }
+
+    @Test
+    void removesExistingHerbivore() {
+        World world = new World(100.0, 100.0);
+        Herbivore herbivore = createHerbivore(50.0, 50.0);
+
+        world.addHerbivore(herbivore);
+        world.removeHerbivore(herbivore);
+
+        assertTrue(world.getHerbivores().isEmpty());
+    }
+
+    @Test
+    void rejectsRemovingHerbivoreThatDoesNotExistInWorld() {
+        World world = new World(100.0, 100.0);
+        Herbivore herbivore = createHerbivore(50.0, 50.0);
+
+        assertThrows(
+                IllegalStateException.class,
+                () -> world.removeHerbivore(herbivore)
+        );
+    }
+
+    @Test
+    void rejectsRemovingNullHerbivore() {
+        World world = new World(100.0, 100.0);
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> world.removeHerbivore(null)
+        );
+    }
+
+    @Test
+    void herbivoreListCannotBeModifiedExternally() {
+        World world = new World(100.0, 100.0);
+        Herbivore herbivore = createHerbivore(50.0, 50.0);
+
+        world.addHerbivore(herbivore);
+
+        List<Herbivore> herbivores = world.getHerbivores();
+
+        assertThrows(
+                UnsupportedOperationException.class,
+                herbivores::clear
+        );
+
+        assertEquals(1, world.getHerbivores().size());
+        assertSame(herbivore, world.getHerbivores().get(0));
     }
 }

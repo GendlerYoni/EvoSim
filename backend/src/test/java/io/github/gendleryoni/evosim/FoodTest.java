@@ -26,4 +26,15 @@ class FoodTest {
                 () -> new Food(10.0, Double.POSITIVE_INFINITY)
         );
     }
+
+    @Test
+    void hasExpectedPhysicalRadius() {
+        Food food = new Food(10.0, 20.0);
+
+        assertEquals(
+                3.0,
+                food.getRadius(),
+                1e-9
+        );
+    }
 }
