@@ -1,26 +1,37 @@
 package io.github.gendleryoni.evosim;
 
 public class SimulationConfig {
+
     private final double worldWidth;
     private final double worldHeight;
     private final Genome initialGenome;
+    private final long seed;
 
     public SimulationConfig(
             double worldWidth,
             double worldHeight,
-            Genome initialGenome
+            Genome initialGenome,
+            long seed
     ) {
-        if (worldWidth <= 0 || worldHeight <= 0) {
-            throw new IllegalArgumentException("World dimensions must be positive");
+        if (!Double.isFinite(worldWidth)
+                || !Double.isFinite(worldHeight)
+                || worldWidth <= 0
+                || worldHeight <= 0) {
+            throw new IllegalArgumentException(
+                    "World dimensions must be positive and finite"
+            );
         }
 
         if (initialGenome == null) {
-            throw new IllegalArgumentException("Initial genome cannot be null");
+            throw new IllegalArgumentException(
+                    "Initial genome cannot be null"
+            );
         }
 
         this.worldWidth = worldWidth;
         this.worldHeight = worldHeight;
         this.initialGenome = initialGenome;
+        this.seed = seed;
     }
 
     public double getWorldWidth() {
@@ -33,5 +44,9 @@ public class SimulationConfig {
 
     public Genome getInitialGenome() {
         return initialGenome;
+    }
+
+    public long getSeed() {
+        return seed;
     }
 }
