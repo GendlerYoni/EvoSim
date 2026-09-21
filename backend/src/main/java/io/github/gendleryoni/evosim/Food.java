@@ -2,7 +2,7 @@ package io.github.gendleryoni.evosim;
 
 public class Food {
 
-    private static final double RADIUS = 3.0;
+    static final double RADIUS = 3.0;
 
     private final double x;
     private final double y;
