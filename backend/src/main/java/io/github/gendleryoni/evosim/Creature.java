@@ -100,8 +100,18 @@ public abstract class Creature {
         return explorationDirection;
     }
 
-    public double getRadius() {
+    static double calculateRadius(Genome genome) {
+        if (genome == null) {
+            throw new IllegalArgumentException(
+                    "Genome cannot be null"
+            );
+        }
+
         return BASE_CREATURE_RADIUS * genome.getSize();
+    }
+
+    public double getRadius() {
+        return calculateRadius(genome);
     }
 
     public double getSpeed() {

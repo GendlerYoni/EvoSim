@@ -325,6 +325,33 @@ class WorldTest {
     }
 
     @Test
+    void foodListCannotBeModifiedExternally() {
+        World world = new World(100.0, 100.0);
+
+        Food food = world.addFood(
+                50.0,
+                50.0
+        );
+
+        List<Food> foods = world.getFoods();
+
+        assertThrows(
+                UnsupportedOperationException.class,
+                foods::clear
+        );
+
+        assertEquals(
+                1,
+                world.getFoods().size()
+        );
+
+        assertSame(
+                food,
+                world.getFoods().get(0)
+        );
+    }
+
+    @Test
     void addsHerbivoreInsideWorldBounds() {
         World world = new World(100.0, 100.0);
         Herbivore herbivore = createHerbivore(50.0, 50.0);

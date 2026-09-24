@@ -5,12 +5,16 @@ public class SimulationConfig {
     private final double worldWidth;
     private final double worldHeight;
     private final Genome initialGenome;
+    private final int initialHerbivores;
+    private final int initialFood;
     private final long seed;
 
     public SimulationConfig(
             double worldWidth,
             double worldHeight,
             Genome initialGenome,
+            int initialHerbivores,
+            int initialFood,
             long seed
     ) {
         if (!Double.isFinite(worldWidth)
@@ -28,9 +32,23 @@ public class SimulationConfig {
             );
         }
 
+        if (initialHerbivores < 0) {
+            throw new IllegalArgumentException(
+                    "Initial herbivore count cannot be negative"
+            );
+        }
+
+        if (initialFood < 0) {
+            throw new IllegalArgumentException(
+                    "Initial food count cannot be negative"
+            );
+        }
+
         this.worldWidth = worldWidth;
         this.worldHeight = worldHeight;
         this.initialGenome = initialGenome;
+        this.initialHerbivores = initialHerbivores;
+        this.initialFood = initialFood;
         this.seed = seed;
     }
 
@@ -44,6 +62,14 @@ public class SimulationConfig {
 
     public Genome getInitialGenome() {
         return initialGenome;
+    }
+
+    public int getInitialHerbivores() {
+        return initialHerbivores;
+    }
+
+    public int getInitialFood() {
+        return initialFood;
     }
 
     public long getSeed() {
