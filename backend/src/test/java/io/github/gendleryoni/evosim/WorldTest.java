@@ -325,6 +325,33 @@ class WorldTest {
     }
 
     @Test
+    void foodListCannotBeModifiedExternally() {
+        World world = new World(100.0, 100.0);
+
+        Food food = world.addFood(
+                50.0,
+                50.0
+        );
+
+        List<Food> foods = world.getFoods();
+
+        assertThrows(
+                UnsupportedOperationException.class,
+                foods::clear
+        );
+
+        assertEquals(
+                1,
+                world.getFoods().size()
+        );
+
+        assertSame(
+                food,
+                world.getFoods().get(0)
+        );
+    }
+
+    @Test
     void addsHerbivoreInsideWorldBounds() {
         World world = new World(100.0, 100.0);
         Herbivore herbivore = createHerbivore(50.0, 50.0);
@@ -339,11 +366,13 @@ class WorldTest {
     void allowsHerbivoreExactlyOnPhysicalWorldBoundary() {
         World world = new World(100.0, 100.0);
 
-        Herbivore topLeft = createHerbivore(1.0, 1.0);
+        Herbivore topLeft =
+                createHerbivore(6.0, 6.0);
+
         Herbivore bottomRight = new Herbivore(
                 2,
-                99.0,
-                99.0,
+                94.0,
+                94.0,
                 100.0,
                 1,
                 createGenome(),
@@ -353,7 +382,10 @@ class WorldTest {
         world.addHerbivore(topLeft);
         world.addHerbivore(bottomRight);
 
-        assertEquals(2, world.getHerbivores().size());
+        assertEquals(
+                2,
+                world.getHerbivores().size()
+        );
     }
 
     @Test
@@ -363,28 +395,28 @@ class WorldTest {
         assertThrows(
                 IllegalArgumentException.class,
                 () -> world.addHerbivore(
-                        createHerbivore(0.9, 50.0)
+                        createHerbivore(5.9, 50.0)
                 )
         );
 
         assertThrows(
                 IllegalArgumentException.class,
                 () -> world.addHerbivore(
-                        createHerbivore(99.1, 50.0)
+                        createHerbivore(94.1, 50.0)
                 )
         );
 
         assertThrows(
                 IllegalArgumentException.class,
                 () -> world.addHerbivore(
-                        createHerbivore(50.0, 0.9)
+                        createHerbivore(50.0, 5.9)
                 )
         );
 
         assertThrows(
                 IllegalArgumentException.class,
                 () -> world.addHerbivore(
-                        createHerbivore(50.0, 99.1)
+                        createHerbivore(50.0, 94.1)
                 )
         );
     }
@@ -497,7 +529,9 @@ class WorldTest {
     @Test
     void clampsCreatureAtLeftWall() {
         World world = new World(100.0, 100.0);
-        Herbivore herbivore = createHerbivore(2.0, 50.0);
+
+        Herbivore herbivore =
+                createHerbivore(7.0, 50.0);
 
         world.addHerbivore(herbivore);
 
@@ -508,14 +542,26 @@ class WorldTest {
         );
 
         assertTrue(hitWall);
-        assertEquals(1.0, herbivore.getX(), 1e-9);
-        assertEquals(50.0, herbivore.getY(), 1e-9);
+
+        assertEquals(
+                6.0,
+                herbivore.getX(),
+                1e-9
+        );
+
+        assertEquals(
+                50.0,
+                herbivore.getY(),
+                1e-9
+        );
     }
 
     @Test
     void clampsCreatureAtRightWall() {
         World world = new World(100.0, 100.0);
-        Herbivore herbivore = createHerbivore(98.0, 50.0);
+
+        Herbivore herbivore =
+                createHerbivore(93.0, 50.0);
 
         world.addHerbivore(herbivore);
 
@@ -526,14 +572,26 @@ class WorldTest {
         );
 
         assertTrue(hitWall);
-        assertEquals(99.0, herbivore.getX(), 1e-9);
-        assertEquals(50.0, herbivore.getY(), 1e-9);
+
+        assertEquals(
+                94.0,
+                herbivore.getX(),
+                1e-9
+        );
+
+        assertEquals(
+                50.0,
+                herbivore.getY(),
+                1e-9
+        );
     }
 
     @Test
     void clampsCreatureAtTopWall() {
         World world = new World(100.0, 100.0);
-        Herbivore herbivore = createHerbivore(50.0, 2.0);
+
+        Herbivore herbivore =
+                createHerbivore(50.0, 7.0);
 
         world.addHerbivore(herbivore);
 
@@ -544,14 +602,26 @@ class WorldTest {
         );
 
         assertTrue(hitWall);
-        assertEquals(50.0, herbivore.getX(), 1e-9);
-        assertEquals(1.0, herbivore.getY(), 1e-9);
+
+        assertEquals(
+                50.0,
+                herbivore.getX(),
+                1e-9
+        );
+
+        assertEquals(
+                6.0,
+                herbivore.getY(),
+                1e-9
+        );
     }
 
     @Test
     void clampsCreatureAtBottomWall() {
         World world = new World(100.0, 100.0);
-        Herbivore herbivore = createHerbivore(50.0, 98.0);
+
+        Herbivore herbivore =
+                createHerbivore(50.0, 93.0);
 
         world.addHerbivore(herbivore);
 
@@ -562,14 +632,26 @@ class WorldTest {
         );
 
         assertTrue(hitWall);
-        assertEquals(50.0, herbivore.getX(), 1e-9);
-        assertEquals(99.0, herbivore.getY(), 1e-9);
+
+        assertEquals(
+                50.0,
+                herbivore.getX(),
+                1e-9
+        );
+
+        assertEquals(
+                94.0,
+                herbivore.getY(),
+                1e-9
+        );
     }
 
     @Test
     void slidesAlongWallWhenOnlyOneAxisExceedsBounds() {
         World world = new World(100.0, 100.0);
-        Herbivore herbivore = createHerbivore(50.0, 2.0);
+
+        Herbivore herbivore =
+                createHerbivore(50.0, 7.0);
 
         world.addHerbivore(herbivore);
 
@@ -583,8 +665,18 @@ class WorldTest {
                 50.0 + 10.0 / Math.sqrt(2.0);
 
         assertTrue(hitWall);
-        assertEquals(expectedX, herbivore.getX(), 1e-9);
-        assertEquals(1.0, herbivore.getY(), 1e-9);
+
+        assertEquals(
+                expectedX,
+                herbivore.getX(),
+                1e-9
+        );
+
+        assertEquals(
+                6.0,
+                herbivore.getY(),
+                1e-9
+        );
     }
 
     @Test

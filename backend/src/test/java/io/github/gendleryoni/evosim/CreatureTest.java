@@ -49,6 +49,7 @@ class CreatureTest {
         assertEquals(100.0, herbivore.getEnergy());
         assertEquals(1, herbivore.getGeneration());
         assertSame(genome, herbivore.getGenome());
+
         assertEquals(
                 Direction.NORTH,
                 herbivore.getExplorationDirection()
@@ -60,7 +61,7 @@ class CreatureTest {
         Herbivore herbivore = createHerbivore();
 
         assertEquals(
-                1.0,
+                6.0,
                 herbivore.getRadius(),
                 1e-9
         );
@@ -71,7 +72,7 @@ class CreatureTest {
         Herbivore herbivore = createHerbivore();
 
         assertEquals(
-                5.0,
+                25.0,
                 herbivore.getSpeed(),
                 1e-9
         );
@@ -99,7 +100,7 @@ class CreatureTest {
         );
 
         assertEquals(
-                30.0,
+                200.0,
                 herbivore.getSenseRadius(),
                 1e-9
         );
@@ -113,7 +114,7 @@ class CreatureTest {
                 herbivore.getMovementDistance(0.05);
 
         assertEquals(
-                0.25,
+                1.25,
                 distance,
                 1e-9
         );
@@ -317,6 +318,7 @@ class CreatureTest {
                 () -> herbivore.changeExplorationDirection(null)
         );
     }
+
     @Test
     void addsEnergy() {
         Herbivore herbivore = createHerbivore();
@@ -396,6 +398,7 @@ class CreatureTest {
                 herbivore.getEnergy(),
                 1e-9
         );
+
         assertFalse(herbivore.isDead());
     }
 

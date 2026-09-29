@@ -2,9 +2,9 @@ package io.github.gendleryoni.evosim;
 
 public abstract class Creature {
 
-    private static final double BASE_CREATURE_RADIUS = 1.0;
-    private static final double BASE_SPEED = 5.0;
-    private static final double BASE_SENSE_RADIUS = 15.0;
+    private static final double BASE_CREATURE_RADIUS = 6.0;
+    private static final double BASE_SPEED = 25.0;
+    private static final double BASE_SENSE_RADIUS = 100.0;
 
     private final int id;
     private double x;
@@ -100,8 +100,18 @@ public abstract class Creature {
         return explorationDirection;
     }
 
-    public double getRadius() {
+    static double calculateRadius(Genome genome) {
+        if (genome == null) {
+            throw new IllegalArgumentException(
+                    "Genome cannot be null"
+            );
+        }
+
         return BASE_CREATURE_RADIUS * genome.getSize();
+    }
+
+    public double getRadius() {
+        return calculateRadius(genome);
     }
 
     public double getSpeed() {

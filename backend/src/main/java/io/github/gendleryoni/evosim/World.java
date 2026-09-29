@@ -229,4 +229,8 @@ public class World {
 
         return hitWall;
     }
+
+    public List<Food> getFoods() {
+        return Collections.unmodifiableList(foods);
+    }
 }

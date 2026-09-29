@@ -8,7 +8,10 @@ public class SimulationEngine {
     // Initial V1 timestep; subject to tuning as simulation behavior is tested.
     private static final double TICK_DURATION_SECONDS = 1.0 / 20.0;
 
-    // Temporary V1 values; replaced by the Energy Economy in a later milestone.
+    // Temporary V1 value; replaced by the Energy Economy in M7.
+    private static final double INITIAL_HERBIVORE_ENERGY = 100.0;
+
+    // Temporary V1 values; replaced by the Energy Economy in M7.
     private static final double FOOD_ENERGY_GAIN = 100.0;
     private static final double BASE_TICK_ENERGY_COST = 1.0;
 
@@ -39,6 +42,84 @@ public class SimulationEngine {
 
         this.tickCount = 0;
         this.nextCreatureId = 1;
+
+        initializeSimulation();
+    }
+
+    private void initializeSimulation() {
+        createInitialHerbivores();
+        createInitialFood();
+    }
+
+    private void createInitialHerbivores() {
+        Genome genome = config.getInitialGenome();
+        double radius = Creature.calculateRadius(genome);
+
+        for (int i = 0; i < config.getInitialHerbivores(); i++) {
+            double x = randomCoordinate(
+                    radius,
+                    world.getWidth()
+            );
+
+            double y = randomCoordinate(
+                    radius,
+                    world.getHeight()
+            );
+
+            Direction explorationDirection =
+                    randomDirection();
+
+            createHerbivore(
+                    x,
+                    y,
+                    INITIAL_HERBIVORE_ENERGY,
+                    1,
+                    genome,
+                    explorationDirection
+            );
+        }
+    }
+
+    private void createInitialFood() {
+        for (int i = 0; i < config.getInitialFood(); i++) {
+            double x = randomCoordinate(
+                    Food.RADIUS,
+                    world.getWidth()
+            );
+
+            double y = randomCoordinate(
+                    Food.RADIUS,
+                    world.getHeight()
+            );
+
+            world.addFood(x, y);
+        }
+    }
+
+    private double randomCoordinate(
+            double radius,
+            double worldSize
+    ) {
+        double min = radius;
+        double max = worldSize - radius;
+
+        if (max < min) {
+            throw new IllegalStateException(
+                    "World is too small for entity radius"
+            );
+        }
+
+        return min
+                + random.nextDouble()
+                * (max - min);
+    }
+
+    private Direction randomDirection() {
+        Direction[] directions = Direction.values();
+
+        return directions[
+                random.nextInt(directions.length)
+                ];
     }
 
     public void tick() {
@@ -206,5 +287,9 @@ public class SimulationEngine {
 
     public double getSimulationTimeSeconds() {
         return tickCount * TICK_DURATION_SECONDS;
+    }
+
+    public double getTickDurationSeconds() {
+        return TICK_DURATION_SECONDS;
     }
 }
