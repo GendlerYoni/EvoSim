@@ -288,4 +288,8 @@ public class SimulationEngine {
     public double getSimulationTimeSeconds() {
         return tickCount * TICK_DURATION_SECONDS;
     }
+
+    public double getTickDurationSeconds() {
+        return TICK_DURATION_SECONDS;
+    }
 }
