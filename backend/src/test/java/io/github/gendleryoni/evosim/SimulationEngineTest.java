@@ -473,7 +473,7 @@ class SimulationEngineTest {
         engine.tick();
 
         assertEquals(
-                50.25,
+                51.25,
                 herbivore.getX(),
                 1e-9
         );
@@ -498,16 +498,16 @@ class SimulationEngineTest {
                 Direction.NORTH
         );
 
-        // BASE_SENSE_RADIUS = 15.0 for a baseline genome.
+        // BASE_SENSE_RADIUS = 100.0 for a baseline genome.
         engine.getWorld().addFood(
-                65.0,
+                150.0,
                 50.0
         );
 
         engine.tick();
 
         assertEquals(
-                50.25,
+                51.25,
                 herbivore.getX(),
                 1e-9
         );
@@ -543,8 +543,9 @@ class SimulationEngineTest {
                 Direction.NORTH
         );
 
+        // Distance = 101, just outside the baseline sense radius of 100.
         engineWithFarFood.getWorld().addFood(
-                70.0,
+                151.0,
                 50.0
         );
 
@@ -568,7 +569,7 @@ class SimulationEngineTest {
                 engineWithFarFood
                         .getWorld()
                         .findFoodWithinRadius(
-                                70.0,
+                                151.0,
                                 50.0,
                                 0.0
                         )
@@ -589,10 +590,10 @@ class SimulationEngineTest {
                 Direction.NORTH
         );
 
-        // Herbivore radius = 1, Food radius = 3.
-        // Distance 4 means the two circles touch exactly.
+        // Herbivore radius = 6, Food radius = 3.
+        // Distance 9 means the two circles touch exactly.
         engine.getWorld().addFood(
-                54.0,
+                59.0,
                 50.0
         );
 
@@ -607,7 +608,7 @@ class SimulationEngineTest {
         assertTrue(
                 engine.getWorld()
                         .findFoodWithinRadius(
-                                54.0,
+                                59.0,
                                 50.0,
                                 0.0
                         )
@@ -742,7 +743,7 @@ class SimulationEngineTest {
         Herbivore herbivore = createHerbivore(
                 engine,
                 50.0,
-                1.0,
+                6.0,
                 100.0,
                 Direction.NORTH
         );
@@ -750,7 +751,7 @@ class SimulationEngineTest {
         engine.tick();
 
         assertEquals(
-                1.0,
+                6.0,
                 herbivore.getY(),
                 1e-9
         );
