@@ -8,17 +8,11 @@ public class SimulationEngine {
     // Initial V1 timestep; subject to tuning as simulation behavior is tested.
     private static final double TICK_DURATION_SECONDS = 1.0 / 20.0;
 
-    // Temporary V1 value; replaced by the Energy Economy in M7.
-    private static final double INITIAL_HERBIVORE_ENERGY = 100.0;
-
-    // Temporary V1 values; replaced by the Energy Economy in M7.
-    private static final double FOOD_ENERGY_GAIN = 100.0;
-    private static final double BASE_TICK_ENERGY_COST = 1.0;
-
     private final SimulationConfig config;
     private final World world;
     private final Random random;
     private final HerbivoreBehavior herbivoreBehavior;
+    private final EnergyModel energyModel;
 
     private long tickCount;
     private int nextCreatureId;
@@ -39,6 +33,7 @@ public class SimulationEngine {
 
         this.random = new Random(config.getSeed());
         this.herbivoreBehavior = new HerbivoreBehavior();
+        this.energyModel = new EnergyModel();
 
         this.tickCount = 0;
         this.nextCreatureId = 1;
@@ -72,7 +67,7 @@ public class SimulationEngine {
             createHerbivore(
                     x,
                     y,
-                    INITIAL_HERBIVORE_ENERGY,
+                    energyModel.initialEnergy(),
                     1,
                     genome,
                     explorationDirection
@@ -175,7 +170,7 @@ public class SimulationEngine {
                 world.removeFood(food);
 
                 herbivore.addEnergy(
-                        FOOD_ENERGY_GAIN
+                        energyModel.foodEnergyGain()
                 );
 
                 nearbyFoods.remove(i);
@@ -219,7 +214,9 @@ public class SimulationEngine {
         }
 
         herbivore.consumeEnergy(
-                BASE_TICK_ENERGY_COST
+                energyModel.calculateTickCost(
+                        herbivore.getGenome()
+                )
         );
     }
 

@@ -853,4 +853,36 @@ class SimulationEngineTest {
             );
         }
     }
+    @Test
+    void tickConsumesEnergyAccordingToGenome() {
+        SimulationEngine engine =
+                new SimulationEngine(createDefaultConfig());
+
+        Genome genome = new Genome(
+                4.0,   // speed
+                1.0,   // size
+                1.0,   // sense radius
+                1.0,
+                1.0,
+                180.0
+        );
+
+        Herbivore herbivore =
+                engine.createHerbivore(
+                        500.0,
+                        400.0,
+                        100.0,
+                        1,
+                        genome,
+                        Direction.NORTH
+                );
+
+        engine.tick();
+
+        assertEquals(
+                98.0,
+                herbivore.getEnergy(),
+                1e-9
+        );
+    }
 }
