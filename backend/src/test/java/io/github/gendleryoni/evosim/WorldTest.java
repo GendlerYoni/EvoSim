@@ -697,6 +697,167 @@ class WorldTest {
         assertEquals(50.0, herbivore.getY(), 1e-9);
     }
 
+
+    @Test
+    void addsHerbivoreEggInsideWorldBounds() {
+        World world = new World(100.0, 100.0);
+        Genome genome = createGenome();
+
+        Egg egg = world.addHerbivoreEgg(
+                50.0,
+                50.0,
+                genome,
+                2,
+                50
+        );
+
+        assertEquals(1, world.getHerbivoreEggs().size());
+        assertSame(egg, world.getHerbivoreEggs().get(0));
+    }
+
+    @Test
+    void allowsHerbivoreEggExactlyOnPhysicalWorldBoundary() {
+        World world = new World(100.0, 100.0);
+
+        Egg topLeft = world.addHerbivoreEgg(
+                3.0,
+                3.0,
+                createGenome(),
+                2,
+                50
+        );
+
+        Egg bottomRight = world.addHerbivoreEgg(
+                97.0,
+                97.0,
+                createGenome(),
+                2,
+                50
+        );
+
+        assertEquals(2, world.getHerbivoreEggs().size());
+        assertSame(topLeft, world.getHerbivoreEggs().get(0));
+        assertSame(bottomRight, world.getHerbivoreEggs().get(1));
+    }
+
+    @Test
+    void rejectsHerbivoreEggWhoseBodyExtendsOutsideWorldBounds() {
+        World world = new World(100.0, 100.0);
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> world.addHerbivoreEgg(
+                        2.9,
+                        50.0,
+                        createGenome(),
+                        2,
+                        50
+                )
+        );
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> world.addHerbivoreEgg(
+                        97.1,
+                        50.0,
+                        createGenome(),
+                        2,
+                        50
+                )
+        );
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> world.addHerbivoreEgg(
+                        50.0,
+                        2.9,
+                        createGenome(),
+                        2,
+                        50
+                )
+        );
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> world.addHerbivoreEgg(
+                        50.0,
+                        97.1,
+                        createGenome(),
+                        2,
+                        50
+                )
+        );
+    }
+
+    @Test
+    void removesExistingHerbivoreEgg() {
+        World world = new World(100.0, 100.0);
+
+        Egg egg = world.addHerbivoreEgg(
+                50.0,
+                50.0,
+                createGenome(),
+                2,
+                50
+        );
+
+        world.removeHerbivoreEgg(egg);
+
+        assertTrue(world.getHerbivoreEggs().isEmpty());
+    }
+
+    @Test
+    void rejectsRemovingHerbivoreEggThatDoesNotExistInWorld() {
+        World world = new World(100.0, 100.0);
+
+        Egg egg = new Egg(
+                50.0,
+                50.0,
+                createGenome(),
+                2,
+                50
+        );
+
+        assertThrows(
+                IllegalStateException.class,
+                () -> world.removeHerbivoreEgg(egg)
+        );
+    }
+
+    @Test
+    void rejectsRemovingNullHerbivoreEgg() {
+        World world = new World(100.0, 100.0);
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> world.removeHerbivoreEgg(null)
+        );
+    }
+
+    @Test
+    void herbivoreEggListCannotBeModifiedExternally() {
+        World world = new World(100.0, 100.0);
+
+        Egg egg = world.addHerbivoreEgg(
+                50.0,
+                50.0,
+                createGenome(),
+                2,
+                50
+        );
+
+        List<Egg> eggs = world.getHerbivoreEggs();
+
+        assertThrows(
+                UnsupportedOperationException.class,
+                eggs::clear
+        );
+
+        assertEquals(1, world.getHerbivoreEggs().size());
+        assertSame(egg, world.getHerbivoreEggs().get(0));
+    }
+
+
     @Test
     void rejectsInvalidMovementDistance() {
         World world = new World(100.0, 100.0);
