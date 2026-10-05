@@ -47,10 +47,12 @@ public class SimulationEngine {
     }
 
     private void createInitialHerbivores() {
-        Genome genome = config.getInitialGenome();
-        double radius = Creature.calculateRadius(genome);
-
         for (int i = 0; i < config.getInitialHerbivores(); i++) {
+            Genome genome = createInitialHerbivoreGenome();
+
+            double radius =
+                    Creature.calculateRadius(genome);
+
             double x = randomCoordinate(
                     radius,
                     world.getWidth()
@@ -236,21 +238,18 @@ public class SimulationEngine {
     private void reproduceHerbivore(Herbivore herbivore) {
         Genome parentGenome = herbivore.getGenome();
 
-        Genome childGenome = new Genome(
-                parentGenome.getSpeed(),
-                parentGenome.getSize(),
-                parentGenome.getSenseRadius(),
-                parentGenome.getReproductionThreshold(),
-                parentGenome.getEggHatchTime(),
-                parentGenome.getHue()
-        );
+        Genome childGenome =
+                parentGenome.mutate(
+                        config.getMutationStrength(),
+                        random
+                );
 
         world.addHerbivoreEgg(
                 herbivore.getX(),
                 herbivore.getY(),
                 childGenome,
                 herbivore.getGeneration() + 1,
-                herbivore.getEggHatchTicks()
+                Creature.calculateEggHatchTicks(childGenome)
         );
 
         herbivore.consumeEnergy(
@@ -334,6 +333,25 @@ public class SimulationEngine {
         nextCreatureId++;
 
         return herbivore;
+    }
+
+    private Genome createInitialHerbivoreGenome() {
+        Genome mutatedGenome =
+                config.getInitialGenome().mutate(
+                        config.getMutationStrength(),
+                        random
+                );
+
+        double randomHue = random.nextDouble() * 360.0;
+
+        return new Genome(
+                mutatedGenome.getSpeed(),
+                mutatedGenome.getSize(),
+                mutatedGenome.getSenseRadius(),
+                mutatedGenome.getReproductionThreshold(),
+                mutatedGenome.getEggHatchTime(),
+                randomHue
+        );
     }
 
     public long getTickCount() {

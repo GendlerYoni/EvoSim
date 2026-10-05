@@ -28,7 +28,8 @@ class SimulationConfigTest {
                         genome,
                         20,
                         100,
-                        12345L
+                        12345L,
+                        0.0
                 );
 
         assertEquals(
@@ -71,7 +72,8 @@ class SimulationConfigTest {
                         createGenome(),
                         0,
                         0,
-                        12345L
+                        12345L,
+                        0.0
                 );
 
         assertEquals(
@@ -95,7 +97,8 @@ class SimulationConfigTest {
                         createGenome(),
                         -1,
                         0,
-                        12345L
+                        12345L,
+                        0.0
                 )
         );
     }
@@ -110,7 +113,8 @@ class SimulationConfigTest {
                         createGenome(),
                         0,
                         -1,
-                        12345L
+                        12345L,
+                        0.0
                 )
         );
     }
@@ -125,7 +129,8 @@ class SimulationConfigTest {
                         createGenome(),
                         0,
                         0,
-                        12345L
+                        12345L,
+                        0.0
                 )
         );
 
@@ -137,7 +142,8 @@ class SimulationConfigTest {
                         createGenome(),
                         0,
                         0,
-                        12345L
+                        12345L,
+                        0.0
                 )
         );
 
@@ -149,7 +155,8 @@ class SimulationConfigTest {
                         createGenome(),
                         0,
                         0,
-                        12345L
+                        12345L,
+                        0.0
                 )
         );
 
@@ -161,7 +168,8 @@ class SimulationConfigTest {
                         createGenome(),
                         0,
                         0,
-                        12345L
+                        12345L,
+                        0.0
                 )
         );
     }
@@ -176,7 +184,8 @@ class SimulationConfigTest {
                         createGenome(),
                         0,
                         0,
-                        12345L
+                        12345L,
+                        0.0
                 )
         );
 
@@ -188,7 +197,8 @@ class SimulationConfigTest {
                         createGenome(),
                         0,
                         0,
-                        12345L
+                        12345L,
+                        0.0
                 )
         );
     }
@@ -203,7 +213,8 @@ class SimulationConfigTest {
                         null,
                         0,
                         0,
-                        12345L
+                        12345L,
+                        0.0
                 )
         );
     }

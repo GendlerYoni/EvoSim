@@ -123,6 +123,16 @@ public abstract class Creature {
     }
 
     public int getEggHatchTicks() {
+        return calculateEggHatchTicks(genome);
+    }
+
+    static int calculateEggHatchTicks(Genome genome) {
+        if (genome == null) {
+            throw new IllegalArgumentException(
+                    "Genome cannot be null"
+            );
+        }
+
         return (int) Math.round(
                 BASE_EGG_HATCH_TICKS * genome.getEggHatchTime()
         );

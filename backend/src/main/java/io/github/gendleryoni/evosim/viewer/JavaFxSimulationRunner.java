@@ -17,6 +17,8 @@ class JavaFxSimulationRunner {
 
     private static final long SEED = 12345L;
 
+    private static final double MUTATION_STRENGTH = 0.05;
+
     private static final long NANOS_PER_SECOND =
             1_000_000_000L;
 
@@ -42,7 +44,9 @@ class JavaFxSimulationRunner {
                 initialGenome,
                 INITIAL_HERBIVORES,
                 INITIAL_FOOD,
-                SEED
+                SEED,
+                MUTATION_STRENGTH
+
         );
 
         this.engine = new SimulationEngine(config);

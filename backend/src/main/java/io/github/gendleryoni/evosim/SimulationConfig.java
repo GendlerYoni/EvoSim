@@ -8,6 +8,7 @@ public class SimulationConfig {
     private final int initialHerbivores;
     private final int initialFood;
     private final long seed;
+    private final double mutationStrength;
 
     public SimulationConfig(
             double worldWidth,
@@ -15,7 +16,8 @@ public class SimulationConfig {
             Genome initialGenome,
             int initialHerbivores,
             int initialFood,
-            long seed
+            long seed,
+            double mutationStrength
     ) {
         if (!Double.isFinite(worldWidth)
                 || !Double.isFinite(worldHeight)
@@ -44,12 +46,19 @@ public class SimulationConfig {
             );
         }
 
+        if (!Double.isFinite(mutationStrength) || mutationStrength < 0) {
+            throw new IllegalArgumentException(
+                    "Mutation strength must be non-negative and finite"
+            );
+        }
+
         this.worldWidth = worldWidth;
         this.worldHeight = worldHeight;
         this.initialGenome = initialGenome;
         this.initialHerbivores = initialHerbivores;
         this.initialFood = initialFood;
         this.seed = seed;
+        this.mutationStrength = mutationStrength;
     }
 
     public double getWorldWidth() {
@@ -74,5 +83,9 @@ public class SimulationConfig {
 
     public long getSeed() {
         return seed;
+    }
+
+    public double getMutationStrength() {
+        return mutationStrength;
     }
 }

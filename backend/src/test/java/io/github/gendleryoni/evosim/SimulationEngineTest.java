@@ -3,6 +3,7 @@ package io.github.gendleryoni.evosim;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.Random;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -40,7 +41,8 @@ class SimulationEngineTest {
                 initialGenome,
                 initialHerbivores,
                 initialFood,
-                seed
+                seed,
+                0.0
         );
     }
 
@@ -195,7 +197,7 @@ class SimulationEngineTest {
     }
 
     @Test
-    void initialHerbivoresUseConfiguredGenomeAndInitialState() {
+    void initialHerbivoresUseConfiguredTraitsAndInitialState() {
         SimulationEngine engine =
                 new SimulationEngine(
                         createConfig(
@@ -211,9 +213,47 @@ class SimulationEngineTest {
         for (Herbivore herbivore :
                 engine.getWorld().getHerbivores()) {
 
-            assertSame(
+            Genome herbivoreGenome =
+                    herbivore.getGenome();
+
+            assertNotSame(
                     initialGenome,
-                    herbivore.getGenome()
+                    herbivoreGenome
+            );
+
+            assertEquals(
+                    initialGenome.getSpeed(),
+                    herbivoreGenome.getSpeed(),
+                    1e-9
+            );
+
+            assertEquals(
+                    initialGenome.getSize(),
+                    herbivoreGenome.getSize(),
+                    1e-9
+            );
+
+            assertEquals(
+                    initialGenome.getSenseRadius(),
+                    herbivoreGenome.getSenseRadius(),
+                    1e-9
+            );
+
+            assertEquals(
+                    initialGenome.getReproductionThreshold(),
+                    herbivoreGenome.getReproductionThreshold(),
+                    1e-9
+            );
+
+            assertEquals(
+                    initialGenome.getEggHatchTime(),
+                    herbivoreGenome.getEggHatchTime(),
+                    1e-9
+            );
+
+            assertTrue(
+                    herbivoreGenome.getHue() >= 0.0
+                            && herbivoreGenome.getHue() < 360.0
             );
 
             assertEquals(
@@ -1525,5 +1565,355 @@ class SimulationEngineTest {
 
         assertTrue(foundGenerationTwo);
         assertTrue(foundGenerationThree);
+    }
+
+    private SimulationConfig createConfig(
+            long seed,
+            int initialHerbivores,
+            int initialFood,
+            double mutationStrength
+    ) {
+        return new SimulationConfig(
+                1000.0,
+                800.0,
+                new Genome(
+                        1.0,
+                        1.0,
+                        1.0,
+                        1.0,
+                        1.0,
+                        180.0
+                ),
+                initialHerbivores,
+                initialFood,
+                seed,
+                mutationStrength
+        );
+    }
+
+    @Test
+    void reproductionUsesMutatedChildGenome() {
+        long seed = 12345L;
+        double mutationStrength = 0.05;
+
+        SimulationEngine engine =
+                new SimulationEngine(
+                        createConfig(
+                                seed,
+                                0,
+                                0,
+                                mutationStrength
+                        )
+                );
+
+        Genome parentGenome = new Genome(
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                180.0
+        );
+
+        Herbivore parent = engine.createHerbivore(
+                500.0,
+                400.0,
+                200.0,
+                1,
+                parentGenome,
+                Direction.EAST
+        );
+
+        /*
+         * No initial entities were created, so the Engine's Random
+         * has not been consumed yet. A separate Random with the same
+         * seed should therefore produce the same child mutation.
+         */
+        Random expectedRandom = new Random(seed);
+
+        Genome expectedChildGenome =
+                parentGenome.mutate(
+                        mutationStrength,
+                        expectedRandom
+                );
+
+        engine.tick();
+
+        assertEquals(
+                1,
+                engine.getWorld().getHerbivoreEggs().size()
+        );
+
+        Genome actualChildGenome =
+                engine.getWorld()
+                        .getHerbivoreEggs()
+                        .get(0)
+                        .getGenome();
+
+        assertNotSame(
+                parentGenome,
+                actualChildGenome
+        );
+
+        assertEquals(
+                expectedChildGenome.getSpeed(),
+                actualChildGenome.getSpeed(),
+                1e-9
+        );
+
+        assertEquals(
+                expectedChildGenome.getSize(),
+                actualChildGenome.getSize(),
+                1e-9
+        );
+
+        assertEquals(
+                expectedChildGenome.getSenseRadius(),
+                actualChildGenome.getSenseRadius(),
+                1e-9
+        );
+
+        assertEquals(
+                expectedChildGenome.getReproductionThreshold(),
+                actualChildGenome.getReproductionThreshold(),
+                1e-9
+        );
+
+        assertEquals(
+                expectedChildGenome.getEggHatchTime(),
+                actualChildGenome.getEggHatchTime(),
+                1e-9
+        );
+
+        assertEquals(
+                expectedChildGenome.getHue(),
+                actualChildGenome.getHue(),
+                1e-9
+        );
+    }
+
+    @Test
+    void sameSeedProducesSameChildMutation() {
+        long seed = 98765L;
+        double mutationStrength = 0.05;
+
+        SimulationEngine first =
+                new SimulationEngine(
+                        createConfig(
+                                seed,
+                                0,
+                                0,
+                                mutationStrength
+                        )
+                );
+
+        SimulationEngine second =
+                new SimulationEngine(
+                        createConfig(
+                                seed,
+                                0,
+                                0,
+                                mutationStrength
+                        )
+                );
+
+        Genome firstParentGenome = new Genome(
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                180.0
+        );
+
+        Genome secondParentGenome = new Genome(
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                180.0
+        );
+
+        first.createHerbivore(
+                500.0,
+                400.0,
+                200.0,
+                1,
+                firstParentGenome,
+                Direction.EAST
+        );
+
+        second.createHerbivore(
+                500.0,
+                400.0,
+                200.0,
+                1,
+                secondParentGenome,
+                Direction.EAST
+        );
+
+        first.tick();
+        second.tick();
+
+        Egg firstEgg =
+                first.getWorld()
+                        .getHerbivoreEggs()
+                        .get(0);
+
+        Egg secondEgg =
+                second.getWorld()
+                        .getHerbivoreEggs()
+                        .get(0);
+
+        Genome firstChild =
+                firstEgg.getGenome();
+
+        Genome secondChild =
+                secondEgg.getGenome();
+
+        assertEquals(firstChild.getSpeed(), secondChild.getSpeed());
+        assertEquals(firstChild.getSize(), secondChild.getSize());
+        assertEquals(firstChild.getSenseRadius(), secondChild.getSenseRadius());
+        assertEquals(
+                firstChild.getReproductionThreshold(),
+                secondChild.getReproductionThreshold()
+        );
+        assertEquals(
+                firstChild.getEggHatchTime(),
+                secondChild.getEggHatchTime()
+        );
+        assertEquals(firstChild.getHue(), secondChild.getHue());
+
+        assertEquals(
+                firstEgg.getRemainingHatchTicks(),
+                secondEgg.getRemainingHatchTicks()
+        );
+    }
+
+    @Test
+    void eggHatchTimeIsDerivedFromChildGenome() {
+        long seed = 12345L;
+        double mutationStrength = 0.05;
+
+        SimulationEngine engine =
+                new SimulationEngine(
+                        createConfig(
+                                seed,
+                                0,
+                                0,
+                                mutationStrength
+                        )
+                );
+
+        Genome parentGenome = new Genome(
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                180.0
+        );
+
+        engine.createHerbivore(
+                500.0,
+                400.0,
+                200.0,
+                1,
+                parentGenome,
+                Direction.EAST
+        );
+
+        engine.tick();
+
+        Egg egg =
+                engine.getWorld()
+                        .getHerbivoreEggs()
+                        .get(0);
+
+        int expectedHatchTicks =
+                Creature.calculateEggHatchTicks(
+                        egg.getGenome()
+                );
+
+        assertEquals(
+                expectedHatchTicks,
+                egg.getRemainingHatchTicks()
+        );
+    }
+
+    @Test
+    void sameSeedProducesSameInitialGenomes() {
+        long seed = 12345L;
+        double mutationStrength = 0.05;
+
+        SimulationEngine first =
+                new SimulationEngine(
+                        createConfig(
+                                seed,
+                                10,
+                                0,
+                                mutationStrength
+                        )
+                );
+
+        SimulationEngine second =
+                new SimulationEngine(
+                        createConfig(
+                                seed,
+                                10,
+                                0,
+                                mutationStrength
+                        )
+                );
+
+        List<Herbivore> firstHerbivores =
+                first.getWorld().getHerbivores();
+
+        List<Herbivore> secondHerbivores =
+                second.getWorld().getHerbivores();
+
+        assertEquals(
+                firstHerbivores.size(),
+                secondHerbivores.size()
+        );
+
+        for (int i = 0; i < firstHerbivores.size(); i++) {
+            Genome firstGenome =
+                    firstHerbivores.get(i).getGenome();
+
+            Genome secondGenome =
+                    secondHerbivores.get(i).getGenome();
+
+            assertEquals(
+                    firstGenome.getSpeed(),
+                    secondGenome.getSpeed()
+            );
+
+            assertEquals(
+                    firstGenome.getSize(),
+                    secondGenome.getSize()
+            );
+
+            assertEquals(
+                    firstGenome.getSenseRadius(),
+                    secondGenome.getSenseRadius()
+            );
+
+            assertEquals(
+                    firstGenome.getReproductionThreshold(),
+                    secondGenome.getReproductionThreshold()
+            );
+
+            assertEquals(
+                    firstGenome.getEggHatchTime(),
+                    secondGenome.getEggHatchTime()
+            );
+
+            assertEquals(
+                    firstGenome.getHue(),
+                    secondGenome.getHue()
+            );
+        }
     }
 }
