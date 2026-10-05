@@ -82,7 +82,10 @@ class WorldTest {
 
         assertThrows(
                 IllegalArgumentException.class,
-                () -> new World(100.0, Double.POSITIVE_INFINITY)
+                () -> new World(
+                        100.0,
+                        Double.POSITIVE_INFINITY
+                )
         );
     }
 
@@ -90,21 +93,44 @@ class WorldTest {
     void addsFoodInsideWorldBounds() {
         World world = new World(100.0, 100.0);
 
-        Food food = world.addFood(25.0, 30.0);
+        Food food = world.addFood(
+                25.0,
+                30.0
+        );
 
         List<Food> nearbyFoods =
-                world.findFoodWithinRadius(25.0, 30.0, 0.0);
+                world.findFoodWithinRadius(
+                        25.0,
+                        30.0,
+                        0.0
+                );
 
-        assertEquals(1, nearbyFoods.size());
-        assertSame(food, nearbyFoods.get(0));
+        assertEquals(
+                1,
+                nearbyFoods.size()
+        );
+
+        assertSame(
+                food,
+                nearbyFoods.get(0)
+        );
     }
 
     @Test
     void allowsFoodExactlyOnPhysicalWorldBoundary() {
         World world = new World(100.0, 100.0);
 
-        Food topLeft = world.addFood(3.0, 3.0);
-        Food bottomRight = world.addFood(97.0, 97.0);
+        Food topLeft =
+                world.addFood(
+                        3.0,
+                        3.0
+                );
+
+        Food bottomRight =
+                world.addFood(
+                        97.0,
+                        97.0
+                );
 
         assertNotNull(topLeft);
         assertNotNull(bottomRight);
@@ -116,22 +142,34 @@ class WorldTest {
 
         assertThrows(
                 IllegalArgumentException.class,
-                () -> world.addFood(2.9, 50.0)
+                () -> world.addFood(
+                        2.9,
+                        50.0
+                )
         );
 
         assertThrows(
                 IllegalArgumentException.class,
-                () -> world.addFood(97.1, 50.0)
+                () -> world.addFood(
+                        97.1,
+                        50.0
+                )
         );
 
         assertThrows(
                 IllegalArgumentException.class,
-                () -> world.addFood(50.0, 2.9)
+                () -> world.addFood(
+                        50.0,
+                        2.9
+                )
         );
 
         assertThrows(
                 IllegalArgumentException.class,
-                () -> world.addFood(50.0, 97.1)
+                () -> world.addFood(
+                        50.0,
+                        97.1
+                )
         );
     }
 
@@ -141,7 +179,10 @@ class WorldTest {
 
         assertThrows(
                 IllegalArgumentException.class,
-                () -> world.addFood(Double.NaN, 50.0)
+                () -> world.addFood(
+                        Double.NaN,
+                        50.0
+                )
         );
 
         assertThrows(
@@ -157,21 +198,35 @@ class WorldTest {
     void removesExistingFood() {
         World world = new World(100.0, 100.0);
 
-        Food food = world.addFood(25.0, 30.0);
+        Food food =
+                world.addFood(
+                        25.0,
+                        30.0
+                );
 
         world.removeFood(food);
 
         List<Food> nearbyFoods =
-                world.findFoodWithinRadius(25.0, 30.0, 0.0);
+                world.findFoodWithinRadius(
+                        25.0,
+                        30.0,
+                        0.0
+                );
 
-        assertTrue(nearbyFoods.isEmpty());
+        assertTrue(
+                nearbyFoods.isEmpty()
+        );
     }
 
     @Test
     void rejectsRemovingFoodThatDoesNotExistInWorld() {
         World world = new World(100.0, 100.0);
 
-        Food food = new Food(25.0, 30.0);
+        Food food =
+                new Food(
+                        25.0,
+                        30.0
+                );
 
         assertThrows(
                 IllegalStateException.class,
@@ -191,10 +246,23 @@ class WorldTest {
 
     @Test
     void findsOnlyFoodWithinRadius() {
-        World world = new World(100.0, 100.0);
+        World world =
+                new World(
+                        100.0,
+                        100.0
+                );
 
-        Food closeFood = world.addFood(53.0, 54.0);
-        Food farFood = world.addFood(70.0, 70.0);
+        Food closeFood =
+                world.addFood(
+                        53.0,
+                        54.0
+                );
+
+        Food farFood =
+                world.addFood(
+                        70.0,
+                        70.0
+                );
 
         List<Food> nearbyFoods =
                 world.findFoodWithinRadius(
@@ -203,16 +271,34 @@ class WorldTest {
                         5.0
                 );
 
-        assertEquals(1, nearbyFoods.size());
-        assertSame(closeFood, nearbyFoods.get(0));
-        assertFalse(nearbyFoods.contains(farFood));
+        assertEquals(
+                1,
+                nearbyFoods.size()
+        );
+
+        assertSame(
+                closeFood,
+                nearbyFoods.get(0)
+        );
+
+        assertFalse(
+                nearbyFoods.contains(farFood)
+        );
     }
 
     @Test
     void includesFoodExactlyOnRadiusBoundary() {
-        World world = new World(100.0, 100.0);
+        World world =
+                new World(
+                        100.0,
+                        100.0
+                );
 
-        Food food = world.addFood(53.0, 54.0);
+        Food food =
+                world.addFood(
+                        53.0,
+                        54.0
+                );
 
         List<Food> nearbyFoods =
                 world.findFoodWithinRadius(
@@ -221,16 +307,35 @@ class WorldTest {
                         5.0
                 );
 
-        assertEquals(1, nearbyFoods.size());
-        assertSame(food, nearbyFoods.get(0));
+        assertEquals(
+                1,
+                nearbyFoods.size()
+        );
+
+        assertSame(
+                food,
+                nearbyFoods.get(0)
+        );
     }
 
     @Test
     void zeroRadiusFindsFoodAtExactPosition() {
-        World world = new World(100.0, 100.0);
+        World world =
+                new World(
+                        100.0,
+                        100.0
+                );
 
-        Food exactFood = world.addFood(50.0, 50.0);
-        world.addFood(50.1, 50.0);
+        Food exactFood =
+                world.addFood(
+                        50.0,
+                        50.0
+                );
+
+        world.addFood(
+                50.1,
+                50.0
+        );
 
         List<Food> nearbyFoods =
                 world.findFoodWithinRadius(
@@ -239,13 +344,24 @@ class WorldTest {
                         0.0
                 );
 
-        assertEquals(1, nearbyFoods.size());
-        assertSame(exactFood, nearbyFoods.get(0));
+        assertEquals(
+                1,
+                nearbyFoods.size()
+        );
+
+        assertSame(
+                exactFood,
+                nearbyFoods.get(0)
+        );
     }
 
     @Test
     void rejectsInvalidRadiusQuery() {
-        World world = new World(100.0, 100.0);
+        World world =
+                new World(
+                        100.0,
+                        100.0
+                );
 
         assertThrows(
                 IllegalArgumentException.class,
@@ -277,7 +393,11 @@ class WorldTest {
 
     @Test
     void rejectsNonFiniteQueryPosition() {
-        World world = new World(100.0, 100.0);
+        World world =
+                new World(
+                        100.0,
+                        100.0
+                );
 
         assertThrows(
                 IllegalArgumentException.class,
@@ -300,9 +420,17 @@ class WorldTest {
 
     @Test
     void returnedFoodListDoesNotExposeWorldStorage() {
-        World world = new World(100.0, 100.0);
+        World world =
+                new World(
+                        100.0,
+                        100.0
+                );
 
-        Food food = world.addFood(50.0, 50.0);
+        Food food =
+                world.addFood(
+                        50.0,
+                        50.0
+                );
 
         List<Food> nearbyFoods =
                 world.findFoodWithinRadius(
@@ -320,20 +448,33 @@ class WorldTest {
                         10.0
                 );
 
-        assertEquals(1, secondQuery.size());
-        assertSame(food, secondQuery.get(0));
+        assertEquals(
+                1,
+                secondQuery.size()
+        );
+
+        assertSame(
+                food,
+                secondQuery.get(0)
+        );
     }
 
     @Test
     void foodListCannotBeModifiedExternally() {
-        World world = new World(100.0, 100.0);
+        World world =
+                new World(
+                        100.0,
+                        100.0
+                );
 
-        Food food = world.addFood(
-                50.0,
-                50.0
-        );
+        Food food =
+                world.addFood(
+                        50.0,
+                        50.0
+                );
 
-        List<Food> foods = world.getFoods();
+        List<Food> foods =
+                world.getFoods();
 
         assertThrows(
                 UnsupportedOperationException.class,
@@ -352,32 +493,59 @@ class WorldTest {
     }
 
     @Test
-    void addsHerbivoreInsideWorldBounds() {
-        World world = new World(100.0, 100.0);
-        Herbivore herbivore = createHerbivore(50.0, 50.0);
+    void addsHerbivoreInsideCreatureMovementBounds() {
+        World world =
+                new World(
+                        100.0,
+                        100.0
+                );
+
+        Herbivore herbivore =
+                createHerbivore(
+                        50.0,
+                        50.0
+                );
 
         world.addHerbivore(herbivore);
 
-        assertEquals(1, world.getHerbivores().size());
-        assertSame(herbivore, world.getHerbivores().get(0));
+        assertEquals(
+                1,
+                world.getHerbivores().size()
+        );
+
+        assertSame(
+                herbivore,
+                world.getHerbivores().get(0)
+        );
     }
 
     @Test
-    void allowsHerbivoreExactlyOnPhysicalWorldBoundary() {
-        World world = new World(100.0, 100.0);
+    void allowsHerbivoreExactlyOnCreatureMovementBoundary() {
+        World world =
+                new World(
+                        100.0,
+                        100.0
+                );
+
+        double margin =
+                Creature.calculateMaximumRadius();
 
         Herbivore topLeft =
-                createHerbivore(6.0, 6.0);
+                createHerbivore(
+                        margin,
+                        margin
+                );
 
-        Herbivore bottomRight = new Herbivore(
-                2,
-                94.0,
-                94.0,
-                100.0,
-                1,
-                createGenome(),
-                Direction.NORTH
-        );
+        Herbivore bottomRight =
+                new Herbivore(
+                        2,
+                        100.0 - margin,
+                        100.0 - margin,
+                        100.0,
+                        1,
+                        createGenome(),
+                        Direction.NORTH
+                );
 
         world.addHerbivore(topLeft);
         world.addHerbivore(bottomRight);
@@ -389,41 +557,64 @@ class WorldTest {
     }
 
     @Test
-    void rejectsHerbivoreWhoseBodyExtendsOutsideWorldBounds() {
-        World world = new World(100.0, 100.0);
+    void rejectsHerbivoreOutsideCreatureMovementBounds() {
+        World world =
+                new World(
+                        100.0,
+                        100.0
+                );
+
+        double margin =
+                Creature.calculateMaximumRadius();
 
         assertThrows(
                 IllegalArgumentException.class,
                 () -> world.addHerbivore(
-                        createHerbivore(5.9, 50.0)
+                        createHerbivore(
+                                margin - 0.1,
+                                50.0
+                        )
                 )
         );
 
         assertThrows(
                 IllegalArgumentException.class,
                 () -> world.addHerbivore(
-                        createHerbivore(94.1, 50.0)
+                        createHerbivore(
+                                100.0 - margin + 0.1,
+                                50.0
+                        )
                 )
         );
 
         assertThrows(
                 IllegalArgumentException.class,
                 () -> world.addHerbivore(
-                        createHerbivore(50.0, 5.9)
+                        createHerbivore(
+                                50.0,
+                                margin - 0.1
+                        )
                 )
         );
 
         assertThrows(
                 IllegalArgumentException.class,
                 () -> world.addHerbivore(
-                        createHerbivore(50.0, 94.1)
+                        createHerbivore(
+                                50.0,
+                                100.0 - margin + 0.1
+                        )
                 )
         );
     }
 
     @Test
     void rejectsAddingNullHerbivore() {
-        World world = new World(100.0, 100.0);
+        World world =
+                new World(
+                        100.0,
+                        100.0
+                );
 
         assertThrows(
                 IllegalArgumentException.class,
@@ -433,19 +624,39 @@ class WorldTest {
 
     @Test
     void removesExistingHerbivore() {
-        World world = new World(100.0, 100.0);
-        Herbivore herbivore = createHerbivore(50.0, 50.0);
+        World world =
+                new World(
+                        100.0,
+                        100.0
+                );
+
+        Herbivore herbivore =
+                createHerbivore(
+                        50.0,
+                        50.0
+                );
 
         world.addHerbivore(herbivore);
         world.removeHerbivore(herbivore);
 
-        assertTrue(world.getHerbivores().isEmpty());
+        assertTrue(
+                world.getHerbivores().isEmpty()
+        );
     }
 
     @Test
     void rejectsRemovingHerbivoreThatDoesNotExistInWorld() {
-        World world = new World(100.0, 100.0);
-        Herbivore herbivore = createHerbivore(50.0, 50.0);
+        World world =
+                new World(
+                        100.0,
+                        100.0
+                );
+
+        Herbivore herbivore =
+                createHerbivore(
+                        50.0,
+                        50.0
+                );
 
         assertThrows(
                 IllegalStateException.class,
@@ -455,7 +666,11 @@ class WorldTest {
 
     @Test
     void rejectsRemovingNullHerbivore() {
-        World world = new World(100.0, 100.0);
+        World world =
+                new World(
+                        100.0,
+                        100.0
+                );
 
         assertThrows(
                 IllegalArgumentException.class,
@@ -465,60 +680,111 @@ class WorldTest {
 
     @Test
     void herbivoreListCannotBeModifiedExternally() {
-        World world = new World(100.0, 100.0);
-        Herbivore herbivore = createHerbivore(50.0, 50.0);
+        World world =
+                new World(
+                        100.0,
+                        100.0
+                );
+
+        Herbivore herbivore =
+                createHerbivore(
+                        50.0,
+                        50.0
+                );
 
         world.addHerbivore(herbivore);
 
-        List<Herbivore> herbivores = world.getHerbivores();
+        List<Herbivore> herbivores =
+                world.getHerbivores();
 
         assertThrows(
                 UnsupportedOperationException.class,
                 herbivores::clear
         );
 
-        assertEquals(1, world.getHerbivores().size());
-        assertSame(herbivore, world.getHerbivores().get(0));
+        assertEquals(
+                1,
+                world.getHerbivores().size()
+        );
+
+        assertSame(
+                herbivore,
+                world.getHerbivores().get(0)
+        );
     }
+
     @Test
     void movesCreatureNormally() {
-        World world = new World(100.0, 100.0);
-        Herbivore herbivore = createHerbivore(50.0, 50.0);
+        World world =
+                new World(
+                        100.0,
+                        100.0
+                );
+
+        Herbivore herbivore =
+                createHerbivore(
+                        50.0,
+                        50.0
+                );
 
         world.addHerbivore(herbivore);
 
-        boolean hitWall = world.moveCreature(
-                herbivore,
-                new Vector2D(1.0, 0.0),
-                5.0
-        );
+        boolean hitWall =
+                world.moveCreature(
+                        herbivore,
+                        new Vector2D(1.0, 0.0),
+                        5.0
+                );
 
         assertFalse(hitWall);
-        assertEquals(55.0, herbivore.getX(), 1e-9);
-        assertEquals(50.0, herbivore.getY(), 1e-9);
+
+        assertEquals(
+                55.0,
+                herbivore.getX(),
+                1e-9
+        );
+
+        assertEquals(
+                50.0,
+                herbivore.getY(),
+                1e-9
+        );
     }
 
     @Test
     void normalizesDiagonalMovement() {
-        World world = new World(100.0, 100.0);
-        Herbivore herbivore = createHerbivore(50.0, 50.0);
+        World world =
+                new World(
+                        100.0,
+                        100.0
+                );
+
+        Herbivore herbivore =
+                createHerbivore(
+                        50.0,
+                        50.0
+                );
 
         world.addHerbivore(herbivore);
 
-        boolean hitWall = world.moveCreature(
-                herbivore,
-                new Vector2D(1.0, 1.0),
-                10.0
-        );
+        boolean hitWall =
+                world.moveCreature(
+                        herbivore,
+                        new Vector2D(1.0, 1.0),
+                        10.0
+                );
 
-        double expectedOffset = 10.0 / Math.sqrt(2.0);
+        double expectedOffset =
+                10.0 / Math.sqrt(2.0);
 
         assertFalse(hitWall);
+
         assertEquals(
                 50.0 + expectedOffset,
                 herbivore.getX(),
                 1e-9
         );
+
         assertEquals(
                 50.0 + expectedOffset,
                 herbivore.getY(),
@@ -527,24 +793,35 @@ class WorldTest {
     }
 
     @Test
-    void clampsCreatureAtLeftWall() {
-        World world = new World(100.0, 100.0);
+    void clampsCreatureAtLeftMovementBoundary() {
+        World world =
+                new World(
+                        100.0,
+                        100.0
+                );
+
+        double margin =
+                Creature.calculateMaximumRadius();
 
         Herbivore herbivore =
-                createHerbivore(7.0, 50.0);
+                createHerbivore(
+                        margin + 1.0,
+                        50.0
+                );
 
         world.addHerbivore(herbivore);
 
-        boolean hitWall = world.moveCreature(
-                herbivore,
-                new Vector2D(-1.0, 0.0),
-                10.0
-        );
+        boolean hitWall =
+                world.moveCreature(
+                        herbivore,
+                        new Vector2D(-1.0, 0.0),
+                        10.0
+                );
 
         assertTrue(hitWall);
 
         assertEquals(
-                6.0,
+                margin,
                 herbivore.getX(),
                 1e-9
         );
@@ -557,24 +834,35 @@ class WorldTest {
     }
 
     @Test
-    void clampsCreatureAtRightWall() {
-        World world = new World(100.0, 100.0);
+    void clampsCreatureAtRightMovementBoundary() {
+        World world =
+                new World(
+                        100.0,
+                        100.0
+                );
+
+        double margin =
+                Creature.calculateMaximumRadius();
 
         Herbivore herbivore =
-                createHerbivore(93.0, 50.0);
+                createHerbivore(
+                        100.0 - margin - 1.0,
+                        50.0
+                );
 
         world.addHerbivore(herbivore);
 
-        boolean hitWall = world.moveCreature(
-                herbivore,
-                new Vector2D(1.0, 0.0),
-                10.0
-        );
+        boolean hitWall =
+                world.moveCreature(
+                        herbivore,
+                        new Vector2D(1.0, 0.0),
+                        10.0
+                );
 
         assertTrue(hitWall);
 
         assertEquals(
-                94.0,
+                100.0 - margin,
                 herbivore.getX(),
                 1e-9
         );
@@ -587,19 +875,30 @@ class WorldTest {
     }
 
     @Test
-    void clampsCreatureAtTopWall() {
-        World world = new World(100.0, 100.0);
+    void clampsCreatureAtTopMovementBoundary() {
+        World world =
+                new World(
+                        100.0,
+                        100.0
+                );
+
+        double margin =
+                Creature.calculateMaximumRadius();
 
         Herbivore herbivore =
-                createHerbivore(50.0, 7.0);
+                createHerbivore(
+                        50.0,
+                        margin + 1.0
+                );
 
         world.addHerbivore(herbivore);
 
-        boolean hitWall = world.moveCreature(
-                herbivore,
-                new Vector2D(0.0, -1.0),
-                10.0
-        );
+        boolean hitWall =
+                world.moveCreature(
+                        herbivore,
+                        new Vector2D(0.0, -1.0),
+                        10.0
+                );
 
         assertTrue(hitWall);
 
@@ -610,26 +909,37 @@ class WorldTest {
         );
 
         assertEquals(
-                6.0,
+                margin,
                 herbivore.getY(),
                 1e-9
         );
     }
 
     @Test
-    void clampsCreatureAtBottomWall() {
-        World world = new World(100.0, 100.0);
+    void clampsCreatureAtBottomMovementBoundary() {
+        World world =
+                new World(
+                        100.0,
+                        100.0
+                );
+
+        double margin =
+                Creature.calculateMaximumRadius();
 
         Herbivore herbivore =
-                createHerbivore(50.0, 93.0);
+                createHerbivore(
+                        50.0,
+                        100.0 - margin - 1.0
+                );
 
         world.addHerbivore(herbivore);
 
-        boolean hitWall = world.moveCreature(
-                herbivore,
-                new Vector2D(0.0, 1.0),
-                10.0
-        );
+        boolean hitWall =
+                world.moveCreature(
+                        herbivore,
+                        new Vector2D(0.0, 1.0),
+                        10.0
+                );
 
         assertTrue(hitWall);
 
@@ -640,26 +950,37 @@ class WorldTest {
         );
 
         assertEquals(
-                94.0,
+                100.0 - margin,
                 herbivore.getY(),
                 1e-9
         );
     }
 
     @Test
-    void slidesAlongWallWhenOnlyOneAxisExceedsBounds() {
-        World world = new World(100.0, 100.0);
+    void slidesAlongMovementBoundaryWhenOnlyOneAxisExceedsBounds() {
+        World world =
+                new World(
+                        100.0,
+                        100.0
+                );
+
+        double margin =
+                Creature.calculateMaximumRadius();
 
         Herbivore herbivore =
-                createHerbivore(50.0, 7.0);
+                createHerbivore(
+                        50.0,
+                        margin + 1.0
+                );
 
         world.addHerbivore(herbivore);
 
-        boolean hitWall = world.moveCreature(
-                herbivore,
-                new Vector2D(1.0, -1.0),
-                10.0
-        );
+        boolean hitWall =
+                world.moveCreature(
+                        herbivore,
+                        new Vector2D(1.0, -1.0),
+                        10.0
+                );
 
         double expectedX =
                 50.0 + 10.0 / Math.sqrt(2.0);
@@ -673,7 +994,7 @@ class WorldTest {
         );
 
         assertEquals(
-                6.0,
+                margin,
                 herbivore.getY(),
                 1e-9
         );
@@ -681,73 +1002,133 @@ class WorldTest {
 
     @Test
     void zeroVectorDoesNotMoveCreature() {
-        World world = new World(100.0, 100.0);
-        Herbivore herbivore = createHerbivore(50.0, 50.0);
+        World world =
+                new World(
+                        100.0,
+                        100.0
+                );
+
+        Herbivore herbivore =
+                createHerbivore(
+                        50.0,
+                        50.0
+                );
 
         world.addHerbivore(herbivore);
 
-        boolean hitWall = world.moveCreature(
-                herbivore,
-                new Vector2D(0.0, 0.0),
-                10.0
-        );
+        boolean hitWall =
+                world.moveCreature(
+                        herbivore,
+                        new Vector2D(0.0, 0.0),
+                        10.0
+                );
 
         assertFalse(hitWall);
-        assertEquals(50.0, herbivore.getX(), 1e-9);
-        assertEquals(50.0, herbivore.getY(), 1e-9);
-    }
 
-
-    @Test
-    void addsHerbivoreEggInsideWorldBounds() {
-        World world = new World(100.0, 100.0);
-        Genome genome = createGenome();
-
-        Egg egg = world.addHerbivoreEgg(
+        assertEquals(
                 50.0,
+                herbivore.getX(),
+                1e-9
+        );
+
+        assertEquals(
                 50.0,
-                genome,
-                2,
-                50
+                herbivore.getY(),
+                1e-9
         );
-
-        assertEquals(1, world.getHerbivoreEggs().size());
-        assertSame(egg, world.getHerbivoreEggs().get(0));
     }
 
     @Test
-    void allowsHerbivoreEggExactlyOnPhysicalWorldBoundary() {
-        World world = new World(100.0, 100.0);
+    void addsHerbivoreEggInsideCreatureMovementBounds() {
+        World world =
+                new World(
+                        100.0,
+                        100.0
+                );
 
-        Egg topLeft = world.addHerbivoreEgg(
-                Egg.RADIUS,
-                Egg.RADIUS,
-                createGenome(),
-                2,
-                50
+        Genome genome =
+                createGenome();
+
+        Egg egg =
+                world.addHerbivoreEgg(
+                        50.0,
+                        50.0,
+                        genome,
+                        2,
+                        50
+                );
+
+        assertEquals(
+                1,
+                world.getHerbivoreEggs().size()
         );
 
-        Egg bottomRight = world.addHerbivoreEgg(
-                100.0 - Egg.RADIUS,
-                100.0 - Egg.RADIUS,
-                createGenome(),
-                2,
-                50
+        assertSame(
+                egg,
+                world.getHerbivoreEggs().get(0)
         );
-
-        assertEquals(2, world.getHerbivoreEggs().size());
-        assertSame(topLeft, world.getHerbivoreEggs().get(0));
-        assertSame(bottomRight, world.getHerbivoreEggs().get(1));
     }
 
     @Test
-    void rejectsHerbivoreEggWhoseBodyExtendsOutsideWorldBounds() {
-        World world = new World(100.0, 100.0);
+    void allowsHerbivoreEggExactlyOnCreatureMovementBoundary() {
+        World world =
+                new World(
+                        100.0,
+                        100.0
+                );
+
+        double margin =
+                Creature.calculateMaximumRadius();
+
+        Egg topLeft =
+                world.addHerbivoreEgg(
+                        margin,
+                        margin,
+                        createGenome(),
+                        2,
+                        50
+                );
+
+        Egg bottomRight =
+                world.addHerbivoreEgg(
+                        100.0 - margin,
+                        100.0 - margin,
+                        createGenome(),
+                        2,
+                        50
+                );
+
+        assertEquals(
+                2,
+                world.getHerbivoreEggs().size()
+        );
+
+        assertSame(
+                topLeft,
+                world.getHerbivoreEggs().get(0)
+        );
+
+        assertSame(
+                bottomRight,
+                world.getHerbivoreEggs().get(1)
+        );
+    }
+
+    @Test
+    void rejectsHerbivoreEggOutsideCreatureMovementBounds() {
+        World world =
+                new World(
+                        100.0,
+                        100.0
+                );
+
+        double margin =
+                Creature.calculateMaximumRadius();
 
         assertThrows(
                 IllegalArgumentException.class,
                 () -> world.addHerbivoreEgg(
-                        Egg.RADIUS - 0.1,
+                        margin - 0.1,
                         50.0,
                         createGenome(),
                         2,
@@ -758,7 +1139,7 @@ class WorldTest {
         assertThrows(
                 IllegalArgumentException.class,
                 () -> world.addHerbivoreEgg(
-                        100.0 - Egg.RADIUS + 0.1,
+                        100.0 - margin + 0.1,
                         50.0,
                         createGenome(),
                         2,
@@ -770,7 +1151,7 @@ class WorldTest {
                 IllegalArgumentException.class,
                 () -> world.addHerbivoreEgg(
                         50.0,
-                        Egg.RADIUS - 0.1,
+                        margin - 0.1,
                         createGenome(),
                         2,
                         50
@@ -781,7 +1162,7 @@ class WorldTest {
                 IllegalArgumentException.class,
                 () -> world.addHerbivoreEgg(
                         50.0,
-                        100.0 - Egg.RADIUS + 0.1,
+                        100.0 - margin + 0.1,
                         createGenome(),
                         2,
                         50
@@ -791,32 +1172,44 @@ class WorldTest {
 
     @Test
     void removesExistingHerbivoreEgg() {
-        World world = new World(100.0, 100.0);
+        World world =
+                new World(
+                        100.0,
+                        100.0
+                );
 
-        Egg egg = world.addHerbivoreEgg(
-                50.0,
-                50.0,
-                createGenome(),
-                2,
-                50
-        );
+        Egg egg =
+                world.addHerbivoreEgg(
+                        50.0,
+                        50.0,
+                        createGenome(),
+                        2,
+                        50
+                );
 
         world.removeHerbivoreEgg(egg);
 
-        assertTrue(world.getHerbivoreEggs().isEmpty());
+        assertTrue(
+                world.getHerbivoreEggs().isEmpty()
+        );
     }
 
     @Test
     void rejectsRemovingHerbivoreEggThatDoesNotExistInWorld() {
-        World world = new World(100.0, 100.0);
+        World world =
+                new World(
+                        100.0,
+                        100.0
+                );
 
-        Egg egg = new Egg(
-                50.0,
-                50.0,
-                createGenome(),
-                2,
-                50
-        );
+        Egg egg =
+                new Egg(
+                        50.0,
+                        50.0,
+                        createGenome(),
+                        2,
+                        50
+                );
 
         assertThrows(
                 IllegalStateException.class,
@@ -826,7 +1219,11 @@ class WorldTest {
 
     @Test
     void rejectsRemovingNullHerbivoreEgg() {
-        World world = new World(100.0, 100.0);
+        World world =
+                new World(
+                        100.0,
+                        100.0
+                );
 
         assertThrows(
                 IllegalArgumentException.class,
@@ -836,32 +1233,53 @@ class WorldTest {
 
     @Test
     void herbivoreEggListCannotBeModifiedExternally() {
-        World world = new World(100.0, 100.0);
+        World world =
+                new World(
+                        100.0,
+                        100.0
+                );
 
-        Egg egg = world.addHerbivoreEgg(
-                50.0,
-                50.0,
-                createGenome(),
-                2,
-                50
-        );
+        Egg egg =
+                world.addHerbivoreEgg(
+                        50.0,
+                        50.0,
+                        createGenome(),
+                        2,
+                        50
+                );
 
-        List<Egg> eggs = world.getHerbivoreEggs();
+        List<Egg> eggs =
+                world.getHerbivoreEggs();
 
         assertThrows(
                 UnsupportedOperationException.class,
                 eggs::clear
         );
 
-        assertEquals(1, world.getHerbivoreEggs().size());
-        assertSame(egg, world.getHerbivoreEggs().get(0));
-    }
+        assertEquals(
+                1,
+                world.getHerbivoreEggs().size()
+        );
 
+        assertSame(
+                egg,
+                world.getHerbivoreEggs().get(0)
+        );
+    }
 
     @Test
     void rejectsInvalidMovementDistance() {
-        World world = new World(100.0, 100.0);
-        Herbivore herbivore = createHerbivore(50.0, 50.0);
+        World world =
+                new World(
+                        100.0,
+                        100.0
+                );
+
+        Herbivore herbivore =
+                createHerbivore(
+                        50.0,
+                        50.0
+                );
 
         world.addHerbivore(herbivore);
 
@@ -895,7 +1313,11 @@ class WorldTest {
 
     @Test
     void rejectsNullCreatureMovement() {
-        World world = new World(100.0, 100.0);
+        World world =
+                new World(
+                        100.0,
+                        100.0
+                );
 
         assertThrows(
                 IllegalArgumentException.class,
@@ -909,8 +1331,17 @@ class WorldTest {
 
     @Test
     void rejectsNullMovementDirection() {
-        World world = new World(100.0, 100.0);
-        Herbivore herbivore = createHerbivore(50.0, 50.0);
+        World world =
+                new World(
+                        100.0,
+                        100.0
+                );
+
+        Herbivore herbivore =
+                createHerbivore(
+                        50.0,
+                        50.0
+                );
 
         world.addHerbivore(herbivore);
 
@@ -926,8 +1357,17 @@ class WorldTest {
 
     @Test
     void rejectsMovingCreatureThatDoesNotBelongToWorld() {
-        World world = new World(100.0, 100.0);
-        Herbivore herbivore = createHerbivore(50.0, 50.0);
+        World world =
+                new World(
+                        100.0,
+                        100.0
+                );
+
+        Herbivore herbivore =
+                createHerbivore(
+                        50.0,
+                        50.0
+                );
 
         assertThrows(
                 IllegalStateException.class,

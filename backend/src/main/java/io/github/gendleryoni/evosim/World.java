@@ -113,10 +113,10 @@ public class World {
         if (!isCircleInBounds(
                 herbivore.getX(),
                 herbivore.getY(),
-                herbivore.getRadius()
+                Creature.calculateMaximumRadius()
         )) {
             throw new IllegalArgumentException(
-                    "Herbivore must be fully inside world bounds"
+                    "Herbivore must be inside creature movement bounds"
             );
         }
 
@@ -155,7 +155,7 @@ public class World {
         if (!isCircleInBounds(
                 egg.getX(),
                 egg.getY(),
-                egg.getRadius()
+                Creature.calculateMaximumRadius()
         )) {
             throw new IllegalArgumentException(
                     "Herbivore egg must be fully inside world bounds"
@@ -255,12 +255,13 @@ public class World {
                 creature.getY()
                         + normalizedDirection.y() * distance;
 
-        double radius = creature.getRadius();
+        double boundaryMargin =
+                Creature.calculateMaximumRadius();
 
-        double minX = radius;
-        double maxX = width - radius;
-        double minY = radius;
-        double maxY = height - radius;
+        double minX = boundaryMargin;
+        double maxX = width - boundaryMargin;
+        double minY = boundaryMargin;
+        double maxY = height - boundaryMargin;
 
         boolean hitWall =
                 proposedX < minX

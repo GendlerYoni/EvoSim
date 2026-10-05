@@ -47,17 +47,19 @@ public class SimulationEngine {
     }
 
     private void createInitialHerbivores() {
-        Genome genome = config.getInitialGenome();
-        double radius = Creature.calculateRadius(genome);
-
         for (int i = 0; i < config.getInitialHerbivores(); i++) {
+            Genome genome = createInitialHerbivoreGenome();
+
+            double boundaryMargin =
+                    Creature.calculateMaximumRadius();
+
             double x = randomCoordinate(
-                    radius,
+                    boundaryMargin,
                     world.getWidth()
             );
 
             double y = randomCoordinate(
-                    radius,
+                    boundaryMargin,
                     world.getHeight()
             );
 
@@ -78,12 +80,12 @@ public class SimulationEngine {
     private void createInitialFood() {
         for (int i = 0; i < config.getInitialFood(); i++) {
             double x = randomCoordinate(
-                    Food.RADIUS,
+                    Creature.calculateMaximumRadius(),
                     world.getWidth()
             );
 
             double y = randomCoordinate(
-                    Food.RADIUS,
+                    Creature.calculateMaximumRadius(),
                     world.getHeight()
             );
 
@@ -132,6 +134,8 @@ public class SimulationEngine {
         }
 
         processHerbivoreEggs(herbivoreEggsAtTickStart);
+
+        spawnFoodForTick();
 
         tickCount++;
     }
@@ -236,21 +240,18 @@ public class SimulationEngine {
     private void reproduceHerbivore(Herbivore herbivore) {
         Genome parentGenome = herbivore.getGenome();
 
-        Genome childGenome = new Genome(
-                parentGenome.getSpeed(),
-                parentGenome.getSize(),
-                parentGenome.getSenseRadius(),
-                parentGenome.getReproductionThreshold(),
-                parentGenome.getEggHatchTime(),
-                parentGenome.getHue()
-        );
+        Genome childGenome =
+                parentGenome.mutate(
+                        config.getMutationStrength(),
+                        random
+                );
 
         world.addHerbivoreEgg(
                 herbivore.getX(),
                 herbivore.getY(),
                 childGenome,
                 herbivore.getGeneration() + 1,
-                herbivore.getEggHatchTicks()
+                Creature.calculateEggHatchTicks(childGenome)
         );
 
         herbivore.consumeEnergy(
@@ -334,6 +335,60 @@ public class SimulationEngine {
         nextCreatureId++;
 
         return herbivore;
+    }
+
+    private Genome createInitialHerbivoreGenome() {
+        Genome mutatedGenome =
+                config.getInitialGenome().mutate(
+                        config.getMutationStrength(),
+                        random
+                );
+
+        double randomHue = random.nextDouble() * 360.0;
+
+        return new Genome(
+                mutatedGenome.getSpeed(),
+                mutatedGenome.getSize(),
+                mutatedGenome.getSenseRadius(),
+                mutatedGenome.getReproductionThreshold(),
+                mutatedGenome.getEggHatchTime(),
+                randomHue
+        );
+    }
+
+    private void spawnFoodForTick() {
+        int remainingCapacity =
+                config.getFoodCap() - world.getFoods().size();
+
+        if (remainingCapacity <= 0
+                || config.getFoodSpawnMaxPerTick() == 0) {
+            return;
+        }
+
+        int foodToSpawn =
+                random.nextInt(
+                        config.getFoodSpawnMaxPerTick() + 1
+                );
+
+        foodToSpawn =
+                Math.min(
+                        foodToSpawn,
+                        remainingCapacity
+                );
+
+        for (int i = 0; i < foodToSpawn; i++) {
+            double x = randomCoordinate(
+                    Creature.calculateMaximumRadius(),
+                    world.getWidth()
+            );
+
+            double y = randomCoordinate(
+                    Creature.calculateMaximumRadius(),
+                    world.getHeight()
+            );
+
+            world.addFood(x, y);
+        }
     }
 
     public long getTickCount() {
