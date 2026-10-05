@@ -720,16 +720,16 @@ class WorldTest {
         World world = new World(100.0, 100.0);
 
         Egg topLeft = world.addHerbivoreEgg(
-                3.0,
-                3.0,
+                Egg.RADIUS,
+                Egg.RADIUS,
                 createGenome(),
                 2,
                 50
         );
 
         Egg bottomRight = world.addHerbivoreEgg(
-                97.0,
-                97.0,
+                100.0 - Egg.RADIUS,
+                100.0 - Egg.RADIUS,
                 createGenome(),
                 2,
                 50
@@ -747,7 +747,7 @@ class WorldTest {
         assertThrows(
                 IllegalArgumentException.class,
                 () -> world.addHerbivoreEgg(
-                        2.9,
+                        Egg.RADIUS - 0.1,
                         50.0,
                         createGenome(),
                         2,
@@ -758,7 +758,7 @@ class WorldTest {
         assertThrows(
                 IllegalArgumentException.class,
                 () -> world.addHerbivoreEgg(
-                        97.1,
+                        100.0 - Egg.RADIUS + 0.1,
                         50.0,
                         createGenome(),
                         2,
@@ -770,7 +770,7 @@ class WorldTest {
                 IllegalArgumentException.class,
                 () -> world.addHerbivoreEgg(
                         50.0,
-                        2.9,
+                        Egg.RADIUS - 0.1,
                         createGenome(),
                         2,
                         50
@@ -781,7 +781,7 @@ class WorldTest {
                 IllegalArgumentException.class,
                 () -> world.addHerbivoreEgg(
                         50.0,
-                        97.1,
+                        100.0 - Egg.RADIUS + 0.1,
                         createGenome(),
                         2,
                         50

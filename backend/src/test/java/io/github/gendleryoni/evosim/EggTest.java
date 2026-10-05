@@ -164,6 +164,6 @@ class EggTest {
                 50
         );
 
-        assertEquals(3.0, egg.getRadius());
+        assertEquals(1.5, egg.getRadius());
     }
 }

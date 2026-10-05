@@ -2,7 +2,7 @@ package io.github.gendleryoni.evosim;
 
 public class Egg {
 
-    static final double RADIUS = 3.0;
+    static final double RADIUS = 1.5;
 
     private final double x;
     private final double y;
