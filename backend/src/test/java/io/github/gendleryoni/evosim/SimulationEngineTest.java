@@ -42,7 +42,9 @@ class SimulationEngineTest {
                 initialHerbivores,
                 initialFood,
                 seed,
-                0.0
+                0.0,
+                0,
+                500
         );
     }
 
@@ -840,10 +842,13 @@ class SimulationEngineTest {
         SimulationEngine engine =
                 new SimulationEngine(createDefaultConfig());
 
+        double boundaryMargin =
+                Creature.calculateMaximumRadius();
+
         Herbivore herbivore = createHerbivore(
                 engine,
                 50.0,
-                6.0,
+                boundaryMargin,
                 100.0,
                 Direction.NORTH
         );
@@ -851,7 +856,7 @@ class SimulationEngineTest {
         engine.tick();
 
         assertEquals(
-                6.0,
+                boundaryMargin,
                 herbivore.getY(),
                 1e-9
         );
@@ -1587,7 +1592,9 @@ class SimulationEngineTest {
                 initialHerbivores,
                 initialFood,
                 seed,
-                mutationStrength
+                mutationStrength,
+                0,
+                500
         );
     }
 
@@ -1913,6 +1920,178 @@ class SimulationEngineTest {
             assertEquals(
                     firstGenome.getHue(),
                     secondGenome.getHue()
+            );
+        }
+    }
+
+    private SimulationConfig createConfig(
+            long seed,
+            int initialHerbivores,
+            int initialFood,
+            double mutationStrength,
+            int foodSpawnMaxPerTick,
+            int foodCap
+    ) {
+        return new SimulationConfig(
+                1000.0,
+                800.0,
+                new Genome(
+                        1.0,
+                        1.0,
+                        1.0,
+                        1.0,
+                        1.0,
+                        180.0
+                ),
+                initialHerbivores,
+                initialFood,
+                seed,
+                mutationStrength,
+                foodSpawnMaxPerTick,
+                foodCap
+        );
+    }
+
+    @Test
+    void foodSpawningCanBeDisabled() {
+        SimulationEngine engine =
+                new SimulationEngine(
+                        createConfig(
+                                12345L,
+                                0,
+                                0,
+                                0.0,
+                                0,
+                                500
+                        )
+                );
+
+        engine.tick();
+
+        assertEquals(
+                0,
+                engine.getWorld().getFoods().size()
+        );
+    }
+
+    @Test
+    void foodSpawningUsesConfiguredRandomRange() {
+        long seed = 12345L;
+        int foodSpawnMaxPerTick = 10;
+
+        SimulationEngine engine =
+                new SimulationEngine(
+                        createConfig(
+                                seed,
+                                0,
+                                0,
+                                0.0,
+                                foodSpawnMaxPerTick,
+                                500
+                        )
+                );
+
+        Random expectedRandom =
+                new Random(seed);
+
+        int expectedFood =
+                expectedRandom.nextInt(
+                        foodSpawnMaxPerTick + 1
+                );
+
+        engine.tick();
+
+        assertEquals(
+                expectedFood,
+                engine.getWorld().getFoods().size()
+        );
+    }
+
+    @Test
+    void foodSpawningDoesNotExceedFoodCap() {
+        SimulationEngine engine =
+                new SimulationEngine(
+                        createConfig(
+                                12345L,
+                                0,
+                                0,
+                                0.0,
+                                10,
+                                2
+                        )
+                );
+
+        engine.tick();
+
+        assertEquals(
+                2,
+                engine.getWorld().getFoods().size()
+        );
+    }
+
+    @Test
+    void foodSpawningDoesNothingWhenFoodCapIsAlreadyReached() {
+        SimulationEngine engine =
+                new SimulationEngine(
+                        createConfig(
+                                12345L,
+                                0,
+                                5,
+                                0.0,
+                                10,
+                                5
+                        )
+                );
+
+        engine.tick();
+
+        assertEquals(
+                5,
+                engine.getWorld().getFoods().size()
+        );
+    }
+
+    @Test
+    void sameSeedProducesSameFoodSpawning() {
+        SimulationConfig config =
+                createConfig(
+                        12345L,
+                        0,
+                        0,
+                        0.0,
+                        10,
+                        500
+                );
+
+        SimulationEngine first =
+                new SimulationEngine(config);
+
+        SimulationEngine second =
+                new SimulationEngine(config);
+
+        first.tick();
+        second.tick();
+
+        List<Food> firstFoods =
+                first.getWorld().getFoods();
+
+        List<Food> secondFoods =
+                second.getWorld().getFoods();
+
+        assertEquals(
+                firstFoods.size(),
+                secondFoods.size()
+        );
+
+        for (int i = 0; i < firstFoods.size(); i++) {
+            assertEquals(
+                    firstFoods.get(i).getX(),
+                    secondFoods.get(i).getX()
+            );
+
+            assertEquals(
+                    firstFoods.get(i).getY(),
+                    secondFoods.get(i).getY()
             );
         }
     }

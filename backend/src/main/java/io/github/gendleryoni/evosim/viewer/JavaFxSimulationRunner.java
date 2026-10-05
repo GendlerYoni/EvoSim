@@ -19,6 +19,9 @@ class JavaFxSimulationRunner {
 
     private static final double MUTATION_STRENGTH = 0.05;
 
+    private static final int FOOD_SPAWN_MAX = 2;
+    private static final int FOOD_CAP = 500;
+
     private static final long NANOS_PER_SECOND =
             1_000_000_000L;
 
@@ -45,7 +48,9 @@ class JavaFxSimulationRunner {
                 INITIAL_HERBIVORES,
                 INITIAL_FOOD,
                 SEED,
-                MUTATION_STRENGTH
+                MUTATION_STRENGTH,
+                FOOD_SPAWN_MAX,
+                FOOD_CAP
 
         );
 

@@ -50,16 +50,16 @@ public class SimulationEngine {
         for (int i = 0; i < config.getInitialHerbivores(); i++) {
             Genome genome = createInitialHerbivoreGenome();
 
-            double radius =
-                    Creature.calculateRadius(genome);
+            double boundaryMargin =
+                    Creature.calculateMaximumRadius();
 
             double x = randomCoordinate(
-                    radius,
+                    boundaryMargin,
                     world.getWidth()
             );
 
             double y = randomCoordinate(
-                    radius,
+                    boundaryMargin,
                     world.getHeight()
             );
 
@@ -80,12 +80,12 @@ public class SimulationEngine {
     private void createInitialFood() {
         for (int i = 0; i < config.getInitialFood(); i++) {
             double x = randomCoordinate(
-                    Food.RADIUS,
+                    Creature.calculateMaximumRadius(),
                     world.getWidth()
             );
 
             double y = randomCoordinate(
-                    Food.RADIUS,
+                    Creature.calculateMaximumRadius(),
                     world.getHeight()
             );
 
@@ -134,6 +134,8 @@ public class SimulationEngine {
         }
 
         processHerbivoreEggs(herbivoreEggsAtTickStart);
+
+        spawnFoodForTick();
 
         tickCount++;
     }
@@ -352,6 +354,41 @@ public class SimulationEngine {
                 mutatedGenome.getEggHatchTime(),
                 randomHue
         );
+    }
+
+    private void spawnFoodForTick() {
+        int remainingCapacity =
+                config.getFoodCap() - world.getFoods().size();
+
+        if (remainingCapacity <= 0
+                || config.getFoodSpawnMaxPerTick() == 0) {
+            return;
+        }
+
+        int foodToSpawn =
+                random.nextInt(
+                        config.getFoodSpawnMaxPerTick() + 1
+                );
+
+        foodToSpawn =
+                Math.min(
+                        foodToSpawn,
+                        remainingCapacity
+                );
+
+        for (int i = 0; i < foodToSpawn; i++) {
+            double x = randomCoordinate(
+                    Creature.calculateMaximumRadius(),
+                    world.getWidth()
+            );
+
+            double y = randomCoordinate(
+                    Creature.calculateMaximumRadius(),
+                    world.getHeight()
+            );
+
+            world.addFood(x, y);
+        }
     }
 
     public long getTickCount() {

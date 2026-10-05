@@ -135,12 +135,18 @@ public class Genome {
         return ((mutatedHue % 360.0) + 360.0) % 360.0;
     }
 
+
+
     public double getSpeed() {
         return speed;
     }
 
     public double getSize() {
         return size;
+    }
+
+    static double getMaxSize() {
+        return MAX_TRAIT_VALUE;
     }
 
     public double getSenseRadius() {

@@ -148,6 +148,10 @@ public abstract class Creature {
         return BASE_CREATURE_RADIUS * genome.getSize();
     }
 
+    static double calculateMaximumRadius() {
+        return BASE_CREATURE_RADIUS * Genome.getMaxSize();
+    }
+
     public double getRadius() {
         return calculateRadius(genome);
     }

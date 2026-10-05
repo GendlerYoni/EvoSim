@@ -29,7 +29,9 @@ class SimulationConfigTest {
                         20,
                         100,
                         12345L,
-                        0.0
+                        0.05,
+                        10,
+                        500
                 );
 
         assertEquals(
@@ -61,10 +63,25 @@ class SimulationConfigTest {
                 12345L,
                 config.getSeed()
         );
+
+        assertEquals(
+                0.05,
+                config.getMutationStrength()
+        );
+
+        assertEquals(
+                10,
+                config.getFoodSpawnMaxPerTick()
+        );
+
+        assertEquals(
+                500,
+                config.getFoodCap()
+        );
     }
 
     @Test
-    void allowsZeroInitialEntities() {
+    void allowsZeroInitialEntitiesAndFoodSpawning() {
         SimulationConfig config =
                 new SimulationConfig(
                         1000.0,
@@ -73,7 +90,9 @@ class SimulationConfigTest {
                         0,
                         0,
                         12345L,
-                        0.0
+                        0.0,
+                        0,
+                        0
                 );
 
         assertEquals(
@@ -84,6 +103,21 @@ class SimulationConfigTest {
         assertEquals(
                 0,
                 config.getInitialFood()
+        );
+
+        assertEquals(
+                0.0,
+                config.getMutationStrength()
+        );
+
+        assertEquals(
+                0,
+                config.getFoodSpawnMaxPerTick()
+        );
+
+        assertEquals(
+                0,
+                config.getFoodCap()
         );
     }
 
@@ -98,7 +132,9 @@ class SimulationConfigTest {
                         -1,
                         0,
                         12345L,
-                        0.0
+                        0.0,
+                        0,
+                        500
                 )
         );
     }
@@ -114,7 +150,9 @@ class SimulationConfigTest {
                         0,
                         -1,
                         12345L,
-                        0.0
+                        0.0,
+                        0,
+                        500
                 )
         );
     }
@@ -130,7 +168,9 @@ class SimulationConfigTest {
                         0,
                         0,
                         12345L,
-                        0.0
+                        0.0,
+                        0,
+                        500
                 )
         );
 
@@ -143,7 +183,9 @@ class SimulationConfigTest {
                         0,
                         0,
                         12345L,
-                        0.0
+                        0.0,
+                        0,
+                        500
                 )
         );
 
@@ -156,7 +198,9 @@ class SimulationConfigTest {
                         0,
                         0,
                         12345L,
-                        0.0
+                        0.0,
+                        0,
+                        500
                 )
         );
 
@@ -169,7 +213,9 @@ class SimulationConfigTest {
                         0,
                         0,
                         12345L,
-                        0.0
+                        0.0,
+                        0,
+                        500
                 )
         );
     }
@@ -185,7 +231,9 @@ class SimulationConfigTest {
                         0,
                         0,
                         12345L,
-                        0.0
+                        0.0,
+                        0,
+                        500
                 )
         );
 
@@ -198,7 +246,9 @@ class SimulationConfigTest {
                         0,
                         0,
                         12345L,
-                        0.0
+                        0.0,
+                        0,
+                        500
                 )
         );
     }
@@ -214,7 +264,131 @@ class SimulationConfigTest {
                         0,
                         0,
                         12345L,
-                        0.0
+                        0.0,
+                        0,
+                        500
+                )
+        );
+    }
+
+    @Test
+    void rejectsNegativeMutationStrength() {
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> new SimulationConfig(
+                        1000.0,
+                        800.0,
+                        createGenome(),
+                        0,
+                        0,
+                        12345L,
+                        -0.01,
+                        0,
+                        500
+                )
+        );
+    }
+
+    @Test
+    void rejectsNonFiniteMutationStrength() {
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> new SimulationConfig(
+                        1000.0,
+                        800.0,
+                        createGenome(),
+                        0,
+                        0,
+                        12345L,
+                        Double.NaN,
+                        0,
+                        500
+                )
+        );
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> new SimulationConfig(
+                        1000.0,
+                        800.0,
+                        createGenome(),
+                        0,
+                        0,
+                        12345L,
+                        Double.POSITIVE_INFINITY,
+                        0,
+                        500
+                )
+        );
+    }
+
+    @Test
+    void rejectsNegativeFoodSpawnMaxPerTick() {
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> new SimulationConfig(
+                        1000.0,
+                        800.0,
+                        createGenome(),
+                        0,
+                        0,
+                        12345L,
+                        0.0,
+                        -1,
+                        500
+                )
+        );
+    }
+
+    @Test
+    void rejectsNegativeFoodCap() {
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> new SimulationConfig(
+                        1000.0,
+                        800.0,
+                        createGenome(),
+                        0,
+                        0,
+                        12345L,
+                        0.0,
+                        0,
+                        -1
+                )
+        );
+    }
+
+    @Test
+    void rejectsInitialFoodAboveFoodCap() {
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> new SimulationConfig(
+                        1000.0,
+                        800.0,
+                        createGenome(),
+                        0,
+                        101,
+                        12345L,
+                        0.0,
+                        10,
+                        100
+                )
+        );
+    }
+
+    @Test
+    void allowsInitialFoodEqualToFoodCap() {
+        assertDoesNotThrow(
+                () -> new SimulationConfig(
+                        1000.0,
+                        800.0,
+                        createGenome(),
+                        0,
+                        100,
+                        12345L,
+                        0.0,
+                        10,
+                        100
                 )
         );
     }
