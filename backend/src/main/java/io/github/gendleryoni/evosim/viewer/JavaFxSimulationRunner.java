@@ -5,6 +5,7 @@ import io.github.gendleryoni.evosim.Genome;
 import io.github.gendleryoni.evosim.Herbivore;
 import io.github.gendleryoni.evosim.SimulationConfig;
 import io.github.gendleryoni.evosim.SimulationEngine;
+import io.github.gendleryoni.evosim.Egg;
 
 class JavaFxSimulationRunner {
 
@@ -95,6 +96,7 @@ class JavaFxSimulationRunner {
         viewer.clear();
 
         drawFoods(viewer);
+        drawEggs(viewer);
         drawHerbivores(viewer);
     }
 
@@ -104,6 +106,16 @@ class JavaFxSimulationRunner {
                     food.getX(),
                     food.getY(),
                     food.getRadius()
+            );
+        }
+    }
+
+    private void drawEggs(JavaFxViewer viewer) {
+        for (Egg egg : engine.getWorld().getHerbivoreEggs()) {
+            viewer.drawEgg(
+                    egg.getX(),
+                    egg.getY(),
+                    egg.getRadius()
             );
         }
     }

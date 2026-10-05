@@ -5,6 +5,12 @@ public abstract class Creature {
     private static final double BASE_CREATURE_RADIUS = 6.0;
     private static final double BASE_SPEED = 25.0;
     private static final double BASE_SENSE_RADIUS = 100.0;
+    private static final double BASE_REPRODUCTION_THRESHOLD = 200.0;
+    private static final int BASE_EGG_HATCH_TICKS = 50;
+
+    // Fixed V1 reproduction cooldown.
+    // May become an inherited trait later if simulation behavior justifies it.
+    private static final int REPRODUCTION_COOLDOWN_TICKS = 50;
 
     private final int id;
     private double x;
@@ -14,6 +20,7 @@ public abstract class Creature {
     private final Genome genome;
 
     private Direction explorationDirection;
+    private int reproductionCooldownTicksRemaining;
 
     // TODO: Consider adding separate lineage metadata
     // (e.g. "7_18_59") if lineage tracking is needed later.
@@ -70,6 +77,7 @@ public abstract class Creature {
         this.generation = generation;
         this.genome = genome;
         this.explorationDirection = explorationDirection;
+        this.reproductionCooldownTicksRemaining = 0;
     }
 
     public int getId() {
@@ -100,6 +108,26 @@ public abstract class Creature {
         return explorationDirection;
     }
 
+    public double getReproductionThreshold() {
+        return BASE_REPRODUCTION_THRESHOLD
+                * genome.getReproductionThreshold();
+    }
+
+    public int getReproductionCooldownTicksRemaining() {
+        return reproductionCooldownTicksRemaining;
+    }
+
+    public boolean canReproduce() {
+        return energy >= getReproductionThreshold()
+                && isReproductionCooldownComplete();
+    }
+
+    public int getEggHatchTicks() {
+        return (int) Math.round(
+                BASE_EGG_HATCH_TICKS * genome.getEggHatchTime()
+        );
+    }
+
     static double calculateRadius(Genome genome) {
         if (genome == null) {
             throw new IllegalArgumentException(
@@ -124,6 +152,10 @@ public abstract class Creature {
 
     public boolean isDead() {
         return energy <= 0.0;
+    }
+
+    public boolean isReproductionCooldownComplete() {
+        return reproductionCooldownTicksRemaining == 0;
     }
 
     double getMovementDistance(double tickDurationSeconds) {
@@ -165,6 +197,17 @@ public abstract class Creature {
         energy -= amount;
     }
 
+    void advanceReproductionCooldown() {
+        if (reproductionCooldownTicksRemaining > 0) {
+            reproductionCooldownTicksRemaining--;
+        }
+    }
+
+    void startReproductionCooldown() {
+        reproductionCooldownTicksRemaining =
+                REPRODUCTION_COOLDOWN_TICKS;
+    }
+
     void moveTo(double x, double y) {
         if (!Double.isFinite(x) || !Double.isFinite(y)) {
             throw new IllegalArgumentException(
@@ -185,4 +228,6 @@ public abstract class Creature {
 
         this.explorationDirection = direction;
     }
+
+
 }

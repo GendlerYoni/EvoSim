@@ -17,6 +17,9 @@ public class JavaFxViewer extends Application {
     private static final Color FOOD_COLOR =
             Color.PURPLE;
 
+    private static final Color EGG_COLOR =
+            Color.DARKORANGE;
+
     private static final double HERBIVORE_SATURATION = 0.75;
     private static final double HERBIVORE_BRIGHTNESS = 0.85;
 
@@ -91,6 +94,19 @@ public class JavaFxViewer extends Application {
                 y,
                 radius,
                 FOOD_COLOR
+        );
+    }
+
+    void drawEgg(
+            double x,
+            double y,
+            double radius
+    ) {
+        drawCircle(
+                x,
+                y,
+                radius,
+                EGG_COLOR
         );
     }
 

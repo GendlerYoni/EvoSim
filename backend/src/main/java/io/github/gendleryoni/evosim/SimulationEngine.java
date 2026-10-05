@@ -120,6 +120,9 @@ public class SimulationEngine {
     public void tick() {
         List<Herbivore> herbivores = world.getHerbivores();
 
+        int herbivoreEggsAtTickStart =
+                world.getHerbivoreEggs().size();
+
         // V1 decision: herbivores are processed in reverse insertion order.
         // Since newly created herbivores are appended to the list, newer
         // creatures receive priority in same-tick interaction conflicts.
@@ -128,10 +131,15 @@ public class SimulationEngine {
             processHerbivore(herbivores.get(i));
         }
 
+        processHerbivoreEggs(herbivoreEggsAtTickStart);
+
         tickCount++;
     }
 
     private void processHerbivore(Herbivore herbivore) {
+
+        herbivore.advanceReproductionCooldown();
+
         double senseRadius =
                 herbivore.getSenseRadius();
 
@@ -182,6 +190,10 @@ public class SimulationEngine {
             return;
         }
 
+        if (herbivore.canReproduce()) {
+            reproduceHerbivore(herbivore);
+        }
+
         // nearbyFoods now contains only sensed, non-eaten food.
         Vector2D desiredDirection =
                 herbivoreBehavior.chooseDirection(
@@ -219,6 +231,60 @@ public class SimulationEngine {
                 )
         );
     }
+
+
+    private void reproduceHerbivore(Herbivore herbivore) {
+        Genome parentGenome = herbivore.getGenome();
+
+        Genome childGenome = new Genome(
+                parentGenome.getSpeed(),
+                parentGenome.getSize(),
+                parentGenome.getSenseRadius(),
+                parentGenome.getReproductionThreshold(),
+                parentGenome.getEggHatchTime(),
+                parentGenome.getHue()
+        );
+
+        world.addHerbivoreEgg(
+                herbivore.getX(),
+                herbivore.getY(),
+                childGenome,
+                herbivore.getGeneration() + 1,
+                herbivore.getEggHatchTicks()
+        );
+
+        herbivore.consumeEnergy(
+                energyModel.reproductionEnergyCost()
+        );
+
+        herbivore.startReproductionCooldown();
+    }
+
+    private void processHerbivoreEggs(int eggsAtTickStart) {
+        List<Egg> eggs = world.getHerbivoreEggs();
+
+        for (int i = eggsAtTickStart - 1; i >= 0; i--) {
+            Egg egg = eggs.get(i);
+
+            egg.advanceTick();
+
+            if (!egg.isReadyToHatch()) {
+                continue;
+            }
+
+            createHerbivore(
+                    egg.getX(),
+                    egg.getY(),
+                    energyModel.initialEnergy(),
+                    egg.getGeneration(),
+                    egg.getGenome(),
+                    randomDirection()
+            );
+
+            world.removeHerbivoreEgg(egg);
+        }
+    }
+
 
     private Direction chooseAlternativeDirection(
             Direction currentDirection

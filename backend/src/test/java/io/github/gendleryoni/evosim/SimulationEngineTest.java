@@ -44,6 +44,20 @@ class SimulationEngineTest {
         );
     }
 
+    private Genome createGenome(
+            double reproductionThreshold,
+            double eggHatchTime
+    ) {
+        return new Genome(
+                1.0,
+                1.0,
+                1.0,
+                reproductionThreshold,
+                eggHatchTime,
+                180.0
+        );
+    }
+
     private Herbivore createHerbivore(
             SimulationEngine engine,
             double x,
@@ -51,12 +65,30 @@ class SimulationEngineTest {
             double energy,
             Direction explorationDirection
     ) {
+        return createHerbivore(
+                engine,
+                x,
+                y,
+                energy,
+                engine.getConfig().getInitialGenome(),
+                explorationDirection
+        );
+    }
+
+    private Herbivore createHerbivore(
+            SimulationEngine engine,
+            double x,
+            double y,
+            double energy,
+            Genome genome,
+            Direction explorationDirection
+    ) {
         return engine.createHerbivore(
                 x,
                 y,
                 energy,
                 1,
-                engine.getConfig().getInitialGenome(),
+                genome,
                 explorationDirection
         );
     }
@@ -582,11 +614,19 @@ class SimulationEngineTest {
         SimulationEngine engine =
                 new SimulationEngine(createDefaultConfig());
 
+        // High reproduction threshold keeps this test focused only
+        // on eating and Energy gain.
+        Genome genome = createGenome(
+                4.0,
+                1.0
+        );
+
         Herbivore herbivore = createHerbivore(
                 engine,
                 50.0,
                 50.0,
                 100.0,
+                genome,
                 Direction.NORTH
         );
 
@@ -612,6 +652,12 @@ class SimulationEngineTest {
                                 50.0,
                                 0.0
                         )
+                        .isEmpty()
+        );
+
+        assertTrue(
+                engine.getWorld()
+                        .getHerbivoreEggs()
                         .isEmpty()
         );
     }
@@ -699,11 +745,18 @@ class SimulationEngineTest {
         SimulationEngine engine =
                 new SimulationEngine(createDefaultConfig());
 
+        // Prevent reproduction from affecting this interaction-order test.
+        Genome genome = createGenome(
+                4.0,
+                1.0
+        );
+
         Herbivore older = createHerbivore(
                 engine,
                 48.0,
                 50.0,
                 100.0,
+                genome,
                 Direction.NORTH
         );
 
@@ -712,6 +765,7 @@ class SimulationEngineTest {
                 52.0,
                 50.0,
                 100.0,
+                genome,
                 Direction.NORTH
         );
 
@@ -732,6 +786,12 @@ class SimulationEngineTest {
                 199.0,
                 newer.getEnergy(),
                 1e-9
+        );
+
+        assertTrue(
+                engine.getWorld()
+                        .getHerbivoreEggs()
+                        .isEmpty()
         );
     }
 
@@ -824,11 +884,20 @@ class SimulationEngineTest {
         SimulationEngine engine =
                 new SimulationEngine(createDefaultConfig());
 
+        // Threshold = 800, while Energy is periodically replenished
+        // below that value. This keeps reproduction out of a test that
+        // exists only to verify movement bounds.
+        Genome genome = createGenome(
+                4.0,
+                1.0
+        );
+
         Herbivore herbivore = createHerbivore(
                 engine,
                 500.0,
                 400.0,
-                20_000.0,
+                700.0,
+                genome,
                 Direction.NORTH
         );
 
@@ -851,8 +920,13 @@ class SimulationEngineTest {
                             <= engine.getWorld().getHeight()
                             - radius
             );
+
+            if ((i + 1) % 500 == 0) {
+                herbivore.addEnergy(500.0);
+            }
         }
     }
+
     @Test
     void tickConsumesEnergyAccordingToGenome() {
         SimulationEngine engine =
@@ -884,5 +958,572 @@ class SimulationEngineTest {
                 herbivore.getEnergy(),
                 1e-9
         );
+    }
+
+    // ---------------------------------------------------------------------
+    // M8 - Eggs and asexual reproduction
+    // ---------------------------------------------------------------------
+
+    @Test
+    void herbivoreAtThresholdLaysEggAndPaysReproductionCost() {
+        SimulationEngine engine =
+                new SimulationEngine(createDefaultConfig());
+
+        Herbivore parent = createHerbivore(
+                engine,
+                500.0,
+                400.0,
+                200.0,
+                Direction.NORTH
+        );
+
+        double layingX = parent.getX();
+        double layingY = parent.getY();
+
+        engine.tick();
+
+        assertEquals(
+                1,
+                engine.getWorld().getHerbivoreEggs().size()
+        );
+
+        Egg egg =
+                engine.getWorld().getHerbivoreEggs().get(0);
+
+        assertEquals(
+                layingX,
+                egg.getX(),
+                1e-9
+        );
+
+        assertEquals(
+                layingY,
+                egg.getY(),
+                1e-9
+        );
+
+        assertEquals(
+                2,
+                egg.getGeneration()
+        );
+
+        // A newly laid Egg must not lose one hatch tick
+        // during the tick in which it was created.
+        assertEquals(
+                50,
+                egg.getRemainingHatchTicks()
+        );
+
+        // 200 - 50 reproduction cost - 1 normal tick cost.
+        assertEquals(
+                149.0,
+                parent.getEnergy(),
+                1e-9
+        );
+
+        assertEquals(
+                50,
+                parent.getReproductionCooldownTicksRemaining()
+        );
+
+        assertFalse(
+                parent.isReproductionCooldownComplete()
+        );
+    }
+
+    @Test
+    void reproductionCreatesIndependentChildGenomeWithSameValues() {
+        SimulationEngine engine =
+                new SimulationEngine(createDefaultConfig());
+
+        Genome parentGenome =
+                engine.getConfig().getInitialGenome();
+
+        createHerbivore(
+                engine,
+                500.0,
+                400.0,
+                200.0,
+                parentGenome,
+                Direction.NORTH
+        );
+
+        engine.tick();
+
+        Egg egg =
+                engine.getWorld().getHerbivoreEggs().get(0);
+
+        Genome childGenome =
+                egg.getGenome();
+
+        assertNotSame(
+                parentGenome,
+                childGenome
+        );
+
+        assertEquals(
+                parentGenome.getSpeed(),
+                childGenome.getSpeed(),
+                1e-9
+        );
+
+        assertEquals(
+                parentGenome.getSize(),
+                childGenome.getSize(),
+                1e-9
+        );
+
+        assertEquals(
+                parentGenome.getSenseRadius(),
+                childGenome.getSenseRadius(),
+                1e-9
+        );
+
+        assertEquals(
+                parentGenome.getReproductionThreshold(),
+                childGenome.getReproductionThreshold(),
+                1e-9
+        );
+
+        assertEquals(
+                parentGenome.getEggHatchTime(),
+                childGenome.getEggHatchTime(),
+                1e-9
+        );
+
+        assertEquals(
+                parentGenome.getHue(),
+                childGenome.getHue(),
+                1e-9
+        );
+    }
+
+    @Test
+    void herbivoreBelowThresholdDoesNotReproduce() {
+        SimulationEngine engine =
+                new SimulationEngine(createDefaultConfig());
+
+        createHerbivore(
+                engine,
+                500.0,
+                400.0,
+                199.0,
+                Direction.NORTH
+        );
+
+        engine.tick();
+
+        assertTrue(
+                engine.getWorld()
+                        .getHerbivoreEggs()
+                        .isEmpty()
+        );
+    }
+
+    @Test
+    void eatingCanTriggerReproductionInSameTick() {
+        SimulationEngine engine =
+                new SimulationEngine(createDefaultConfig());
+
+        Herbivore herbivore = createHerbivore(
+                engine,
+                500.0,
+                400.0,
+                100.0,
+                Direction.NORTH
+        );
+
+        // Exactly touching:
+        // Herbivore radius 6 + Food radius 3 = 9.
+        engine.getWorld().addFood(
+                509.0,
+                400.0
+        );
+
+        engine.tick();
+
+        assertEquals(
+                1,
+                engine.getWorld().getHerbivoreEggs().size()
+        );
+
+        // 100 + 100 food - 50 reproduction - 1 tick cost.
+        assertEquals(
+                149.0,
+                herbivore.getEnergy(),
+                1e-9
+        );
+
+        assertTrue(
+                engine.getWorld().getFoods().isEmpty()
+        );
+    }
+
+    @Test
+    void reproductionCooldownPreventsNewEggUntilFiftyTicksPass() {
+        SimulationEngine engine =
+                new SimulationEngine(createDefaultConfig());
+
+        // Long hatch time prevents the first Egg from hatching
+        // while this test checks only reproduction cooldown.
+        Genome genome = createGenome(
+                1.0,
+                4.0
+        );
+
+        Herbivore herbivore = createHerbivore(
+                engine,
+                500.0,
+                400.0,
+                1000.0,
+                genome,
+                Direction.NORTH
+        );
+
+        engine.tick();
+
+        assertEquals(
+                1,
+                engine.getWorld().getHerbivoreEggs().size()
+        );
+
+        assertEquals(
+                50,
+                herbivore.getReproductionCooldownTicksRemaining()
+        );
+
+        for (int i = 0; i < 49; i++) {
+            engine.tick();
+        }
+
+        assertEquals(
+                1,
+                engine.getWorld().getHerbivoreEggs().size()
+        );
+
+        assertEquals(
+                1,
+                herbivore.getReproductionCooldownTicksRemaining()
+        );
+
+        engine.tick();
+
+        assertEquals(
+                2,
+                engine.getWorld().getHerbivoreEggs().size()
+        );
+
+        assertEquals(
+                50,
+                herbivore.getReproductionCooldownTicksRemaining()
+        );
+    }
+
+    @Test
+    void eggHatchesAfterExactCountdown() {
+        SimulationEngine engine =
+                new SimulationEngine(createDefaultConfig());
+
+        Genome genome =
+                engine.getConfig().getInitialGenome();
+
+        Egg egg = engine.getWorld().addHerbivoreEgg(
+                500.0,
+                400.0,
+                genome,
+                2,
+                2
+        );
+
+        engine.tick();
+
+        assertEquals(
+                1,
+                egg.getRemainingHatchTicks()
+        );
+
+        assertEquals(
+                1,
+                engine.getWorld().getHerbivoreEggs().size()
+        );
+
+        assertTrue(
+                engine.getWorld().getHerbivores().isEmpty()
+        );
+
+        engine.tick();
+
+        assertTrue(
+                engine.getWorld().getHerbivoreEggs().isEmpty()
+        );
+
+        assertEquals(
+                1,
+                engine.getWorld().getHerbivores().size()
+        );
+
+        Herbivore child =
+                engine.getWorld().getHerbivores().get(0);
+
+        assertEquals(
+                500.0,
+                child.getX(),
+                1e-9
+        );
+
+        assertEquals(
+                400.0,
+                child.getY(),
+                1e-9
+        );
+
+        assertEquals(
+                100.0,
+                child.getEnergy(),
+                1e-9
+        );
+
+        assertEquals(
+                2,
+                child.getGeneration()
+        );
+
+        assertSame(
+                genome,
+                child.getGenome()
+        );
+
+        assertNotNull(
+                child.getExplorationDirection()
+        );
+    }
+
+    @Test
+    void hatchedHerbivoreDoesNotActUntilFollowingTick() {
+        SimulationEngine engine =
+                new SimulationEngine(createDefaultConfig());
+
+        engine.getWorld().addHerbivoreEgg(
+                500.0,
+                400.0,
+                engine.getConfig().getInitialGenome(),
+                2,
+                1
+        );
+
+        engine.tick();
+
+        Herbivore child =
+                engine.getWorld().getHerbivores().get(0);
+
+        // If the child had been processed immediately after hatching,
+        // it would already have paid its normal tick Energy cost.
+        assertEquals(
+                100.0,
+                child.getEnergy(),
+                1e-9
+        );
+
+        assertEquals(
+                500.0,
+                child.getX(),
+                1e-9
+        );
+
+        assertEquals(
+                400.0,
+                child.getY(),
+                1e-9
+        );
+
+        engine.tick();
+
+        assertEquals(
+                99.0,
+                child.getEnergy(),
+                1e-9
+        );
+    }
+
+    @Test
+    void parentDeathDoesNotRemoveItsEgg() {
+        SimulationEngine engine =
+                new SimulationEngine(createDefaultConfig());
+
+        // Threshold = 50 Energy.
+        // Hatch time = round(50 * 0.25) = 13 ticks.
+        Genome genome = createGenome(
+                0.25,
+                0.25
+        );
+
+        Herbivore parent = createHerbivore(
+                engine,
+                500.0,
+                400.0,
+                50.0,
+                genome,
+                Direction.NORTH
+        );
+
+        engine.tick();
+
+        assertEquals(
+                1,
+                engine.getWorld().getHerbivoreEggs().size()
+        );
+
+        assertTrue(
+                parent.isDead()
+        );
+
+        // The parent is removed on its next processing tick.
+        engine.tick();
+
+        assertTrue(
+                engine.getWorld().getHerbivores().isEmpty()
+        );
+
+        assertEquals(
+                1,
+                engine.getWorld().getHerbivoreEggs().size()
+        );
+
+        // The Egg had 13 ticks initially and has now advanced once.
+        assertEquals(
+                12,
+                engine.getWorld()
+                        .getHerbivoreEggs()
+                        .get(0)
+                        .getRemainingHatchTicks()
+        );
+
+        for (int i = 0; i < 12; i++) {
+            engine.tick();
+        }
+
+        assertTrue(
+                engine.getWorld().getHerbivoreEggs().isEmpty()
+        );
+
+        assertEquals(
+                1,
+                engine.getWorld().getHerbivores().size()
+        );
+
+        Herbivore child =
+                engine.getWorld().getHerbivores().get(0);
+
+        assertEquals(
+                2,
+                child.getGeneration()
+        );
+
+        assertEquals(
+                100.0,
+                child.getEnergy(),
+                1e-9
+        );
+    }
+
+    @Test
+    void supportsMultipleGenerations() {
+        SimulationEngine engine =
+                new SimulationEngine(createDefaultConfig());
+
+        // Low threshold and short hatch time make a deterministic,
+        // compact multi-generation test possible.
+        Genome genome = createGenome(
+                0.25,
+                0.25
+        );
+
+        createHerbivore(
+                engine,
+                500.0,
+                400.0,
+                50.0,
+                genome,
+                Direction.NORTH
+        );
+
+        // Generation 1 lays a Generation 2 Egg.
+        engine.tick();
+
+        assertEquals(
+                2,
+                engine.getWorld()
+                        .getHerbivoreEggs()
+                        .get(0)
+                        .getGeneration()
+        );
+
+        // The Generation 2 Egg needs 13 later ticks to hatch.
+        for (int i = 0; i < 13; i++) {
+            engine.tick();
+        }
+
+        assertEquals(
+                1,
+                engine.getWorld().getHerbivores().size()
+        );
+
+        Herbivore generationTwo =
+                engine.getWorld().getHerbivores().get(0);
+
+        assertEquals(
+                2,
+                generationTwo.getGeneration()
+        );
+
+        // The newly hatched Generation 2 creature acts on the next tick.
+        // It starts with 100 Energy and has a threshold of 50,
+        // so it lays a Generation 3 Egg.
+        engine.tick();
+
+        assertEquals(
+                1,
+                engine.getWorld().getHerbivoreEggs().size()
+        );
+
+        assertEquals(
+                3,
+                engine.getWorld()
+                        .getHerbivoreEggs()
+                        .get(0)
+                        .getGeneration()
+        );
+
+        // Hatch Generation 3.
+        for (int i = 0; i < 13; i++) {
+            engine.tick();
+        }
+
+        assertTrue(
+                engine.getWorld().getHerbivoreEggs().isEmpty()
+        );
+
+        assertEquals(
+                2,
+                engine.getWorld().getHerbivores().size()
+        );
+
+        boolean foundGenerationTwo = false;
+        boolean foundGenerationThree = false;
+
+        for (Herbivore herbivore :
+                engine.getWorld().getHerbivores()) {
+
+            if (herbivore.getGeneration() == 2) {
+                foundGenerationTwo = true;
+            }
+
+            if (herbivore.getGeneration() == 3) {
+                foundGenerationThree = true;
+            }
+        }
+
+        assertTrue(foundGenerationTwo);
+        assertTrue(foundGenerationThree);
     }
 }

@@ -4,6 +4,8 @@ final class EnergyModel {
 
     private static final double INITIAL_ENERGY = 100.0;
     private static final double FOOD_ENERGY_GAIN = 100.0;
+    private static final double REPRODUCTION_ENERGY_COST = 50.0;
+
 
     private static final double TRAIT_COST_WEIGHT = 1.0 / 3.0;
 
@@ -33,5 +35,9 @@ final class EnergyModel {
                         * Math.pow(genome.getSize(), SIZE_COST_EXPONENT);
 
         return senseCost + speedCost + sizeCost;
+    }
+
+    double reproductionEnergyCost() {
+        return REPRODUCTION_ENERGY_COST;
     }
 }

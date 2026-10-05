@@ -11,6 +11,7 @@ public class World {
 
     private final List<Food> foods = new ArrayList<>();
     private final List<Herbivore> herbivores = new ArrayList<>();
+    private final List<Egg> herbivoreEggs = new ArrayList<>();
 
     public World(double width, double height) {
         if (!Double.isFinite(width)
@@ -136,8 +137,60 @@ public class World {
         }
     }
 
+    public Egg addHerbivoreEgg(
+            double x,
+            double y,
+            Genome genome,
+            int generation,
+            int remainingHatchTicks
+    ) {
+        Egg egg = new Egg(
+                x,
+                y,
+                genome,
+                generation,
+                remainingHatchTicks
+        );
+
+        if (!isCircleInBounds(
+                egg.getX(),
+                egg.getY(),
+                egg.getRadius()
+        )) {
+            throw new IllegalArgumentException(
+                    "Herbivore egg must be fully inside world bounds"
+            );
+        }
+
+        herbivoreEggs.add(egg);
+
+        return egg;
+    }
+
+    public void removeHerbivoreEgg(Egg egg) {
+        if (egg == null) {
+            throw new IllegalArgumentException(
+                    "Herbivore egg cannot be null"
+            );
+        }
+
+        if (!herbivoreEggs.remove(egg)) {
+            throw new IllegalStateException(
+                    "Herbivore egg does not exist in world"
+            );
+        }
+    }
+
     public List<Herbivore> getHerbivores() {
         return Collections.unmodifiableList(herbivores);
+    }
+
+    public List<Food> getFoods() {
+        return Collections.unmodifiableList(foods);
+    }
+
+    public List<Egg> getHerbivoreEggs() {
+        return Collections.unmodifiableList(herbivoreEggs);
     }
 
     private boolean isCircleInBounds(
@@ -228,9 +281,5 @@ public class World {
         creature.moveTo(finalX, finalY);
 
         return hitWall;
-    }
-
-    public List<Food> getFoods() {
-        return Collections.unmodifiableList(foods);
     }
 }

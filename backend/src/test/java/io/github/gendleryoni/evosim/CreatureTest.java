@@ -445,4 +445,157 @@ class CreatureTest {
                 )
         );
     }
+
+    @Test
+    void calculatesReproductionThresholdFromGenome() {
+        Genome genome = new Genome(
+                1.0,
+                1.0,
+                1.0,
+                2.0,
+                1.0,
+                180.0
+        );
+
+        Herbivore herbivore = new Herbivore(
+                1,
+                50.0,
+                75.0,
+                100.0,
+                1,
+                genome,
+                Direction.NORTH
+        );
+
+        assertEquals(
+                400.0,
+                herbivore.getReproductionThreshold(),
+                1e-9
+        );
+    }
+
+    @Test
+    void newCreatureHasNoReproductionCooldown() {
+        Herbivore herbivore = createHerbivore();
+
+        assertEquals(
+                0,
+                herbivore.getReproductionCooldownTicksRemaining()
+        );
+
+        assertTrue(
+                herbivore.isReproductionCooldownComplete()
+        );
+    }
+
+    @Test
+    void startsReproductionCooldown() {
+        Herbivore herbivore = createHerbivore();
+
+        herbivore.startReproductionCooldown();
+
+        assertEquals(
+                50,
+                herbivore.getReproductionCooldownTicksRemaining()
+        );
+
+        assertFalse(
+                herbivore.isReproductionCooldownComplete()
+        );
+    }
+
+    @Test
+    void advancesReproductionCooldown() {
+        Herbivore herbivore = createHerbivore();
+
+        herbivore.startReproductionCooldown();
+        herbivore.advanceReproductionCooldown();
+
+        assertEquals(
+                49,
+                herbivore.getReproductionCooldownTicksRemaining()
+        );
+    }
+
+    @Test
+    void reproductionCooldownDoesNotGoBelowZero() {
+        Herbivore herbivore = createHerbivore();
+
+        herbivore.advanceReproductionCooldown();
+
+        assertEquals(
+                0,
+                herbivore.getReproductionCooldownTicksRemaining()
+        );
+    }
+
+    @Test
+    void canReproduceWhenEnergyReachesThresholdAndCooldownIsComplete() {
+        Genome genome = createGenome();
+
+        Herbivore herbivore = new Herbivore(
+                1,
+                50.0,
+                75.0,
+                200.0,
+                1,
+                genome,
+                Direction.NORTH
+        );
+
+        assertTrue(herbivore.canReproduce());
+    }
+
+    @Test
+    void cannotReproduceBelowEnergyThreshold() {
+        Herbivore herbivore = createHerbivore();
+
+        assertFalse(herbivore.canReproduce());
+    }
+
+    @Test
+    void cannotReproduceDuringCooldown() {
+        Genome genome = createGenome();
+
+        Herbivore herbivore = new Herbivore(
+                1,
+                50.0,
+                75.0,
+                200.0,
+                1,
+                genome,
+                Direction.NORTH
+        );
+
+        herbivore.startReproductionCooldown();
+
+        assertFalse(herbivore.canReproduce());
+    }
+
+    @Test
+    void calculatesEggHatchTicksFromGenome() {
+        Genome genome = new Genome(
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                2.0,
+                180.0
+        );
+
+        Herbivore herbivore = new Herbivore(
+                1,
+                50.0,
+                75.0,
+                100.0,
+                1,
+                genome,
+                Direction.NORTH
+        );
+
+        assertEquals(
+                100,
+                herbivore.getEggHatchTicks()
+        );
+    }
 }
