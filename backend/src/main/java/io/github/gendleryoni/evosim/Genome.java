@@ -7,6 +7,9 @@ public class Genome {
     private static final double MIN_TRAIT_VALUE = 0.25;
     private static final double MAX_TRAIT_VALUE = 4.0;
 
+    private static final double MIN_REPRODUCTION_THRESHOLD = 0.5;
+    private static final double MAX_REPRODUCTION_THRESHOLD = 2.0;
+
     private final double speed;
     private final double size;
     private final double senseRadius;
@@ -22,11 +25,41 @@ public class Genome {
             double eggHatchTime,
             double hue
     ) {
-        validateTrait(speed, "speed");
-        validateTrait(size, "size");
-        validateTrait(senseRadius, "senseRadius");
-        validateTrait(reproductionThreshold, "reproductionThreshold");
-        validateTrait(eggHatchTime, "eggHatchTime");
+        validateTrait(
+                speed,
+                "speed",
+                MIN_TRAIT_VALUE,
+                MAX_TRAIT_VALUE
+        );
+
+        validateTrait(
+                size,
+                "size",
+                MIN_TRAIT_VALUE,
+                MAX_TRAIT_VALUE
+        );
+
+        validateTrait(
+                senseRadius,
+                "senseRadius",
+                MIN_TRAIT_VALUE,
+                MAX_TRAIT_VALUE
+        );
+
+        validateTrait(
+                reproductionThreshold,
+                "reproductionThreshold",
+                MIN_REPRODUCTION_THRESHOLD,
+                MAX_REPRODUCTION_THRESHOLD
+        );
+
+        validateTrait(
+                eggHatchTime,
+                "eggHatchTime",
+                MIN_TRAIT_VALUE,
+                MAX_TRAIT_VALUE
+        );
+
         validateHue(hue);
 
         this.speed = speed;
@@ -37,8 +70,12 @@ public class Genome {
         this.hue = hue;
     }
 
-    public Genome mutate(double mutationStrength, Random random) {
-        if (!Double.isFinite(mutationStrength) || mutationStrength < 0.0) {
+    public Genome mutate(
+            double mutationStrength,
+            Random random
+    ) {
+        if (!Double.isFinite(mutationStrength)
+                || mutationStrength < 0.0) {
             throw new IllegalArgumentException(
                     "Mutation strength must be non-negative and finite"
             );
@@ -51,22 +88,56 @@ public class Genome {
         }
 
         double mutatedSpeed =
-                mutateTrait(speed, mutationStrength, random);
+                mutateTrait(
+                        speed,
+                        mutationStrength,
+                        random,
+                        MIN_TRAIT_VALUE,
+                        MAX_TRAIT_VALUE
+                );
 
         double mutatedSize =
-                mutateTrait(size, mutationStrength, random);
+                mutateTrait(
+                        size,
+                        mutationStrength,
+                        random,
+                        MIN_TRAIT_VALUE,
+                        MAX_TRAIT_VALUE
+                );
 
         double mutatedSenseRadius =
-                mutateTrait(senseRadius, mutationStrength, random);
+                mutateTrait(
+                        senseRadius,
+                        mutationStrength,
+                        random,
+                        MIN_TRAIT_VALUE,
+                        MAX_TRAIT_VALUE
+                );
 
         double mutatedReproductionThreshold =
-                mutateTrait(reproductionThreshold, mutationStrength, random);
+                mutateTrait(
+                        reproductionThreshold,
+                        mutationStrength,
+                        random,
+                        MIN_REPRODUCTION_THRESHOLD,
+                        MAX_REPRODUCTION_THRESHOLD
+                );
 
         double mutatedEggHatchTime =
-                mutateTrait(eggHatchTime, mutationStrength, random);
+                mutateTrait(
+                        eggHatchTime,
+                        mutationStrength,
+                        random,
+                        MIN_TRAIT_VALUE,
+                        MAX_TRAIT_VALUE
+                );
 
         double mutatedHue =
-                mutateHue(hue, mutationStrength, random);
+                mutateHue(
+                        hue,
+                        mutationStrength,
+                        random
+                );
 
         return new Genome(
                 mutatedSpeed,
@@ -78,17 +149,29 @@ public class Genome {
         );
     }
 
-    private static void validateTrait(double value, String traitName) {
+    private static void validateTrait(
+            double value,
+            String traitName,
+            double minValue,
+            double maxValue
+    ) {
         if (!Double.isFinite(value)
-                || value < MIN_TRAIT_VALUE
-                || value > MAX_TRAIT_VALUE) {
-            throw new IllegalArgumentException(traitName + " must be between "
-                            + MIN_TRAIT_VALUE + " and " + MAX_TRAIT_VALUE);
+                || value < minValue
+                || value > maxValue) {
+            throw new IllegalArgumentException(
+                    traitName
+                            + " must be between "
+                            + minValue
+                            + " and "
+                            + maxValue
+            );
         }
     }
 
     private static void validateHue(double hue) {
-        if (!Double.isFinite(hue) || hue < 0.0 || hue >= 360.0) {
+        if (!Double.isFinite(hue)
+                || hue < 0.0
+                || hue >= 360.0) {
             throw new IllegalArgumentException(
                     "hue must be between 0 inclusive and 360 exclusive"
             );
@@ -98,21 +181,27 @@ public class Genome {
     private static double mutateTrait(
             double value,
             double mutationStrength,
-            Random random
+            Random random,
+            double minValue,
+            double maxValue
     ) {
         if (mutationStrength == 0.0) {
             return value;
         }
 
         double mutationPercentage =
-                (random.nextDouble() * 2.0 - 1.0) * mutationStrength;
+                (random.nextDouble() * 2.0 - 1.0)
+                        * mutationStrength;
 
         double mutatedValue =
                 value * (1.0 + mutationPercentage);
 
         return Math.max(
-                MIN_TRAIT_VALUE,
-                Math.min(MAX_TRAIT_VALUE, mutatedValue)
+                minValue,
+                Math.min(
+                        maxValue,
+                        mutatedValue
+                )
         );
     }
 
@@ -125,17 +214,19 @@ public class Genome {
             return hue;
         }
 
-        double maxHueChange = 360.0 * mutationStrength;
+        double maxHueChange =
+                360.0 * mutationStrength;
 
         double hueChange =
-                (random.nextDouble() * 2.0 - 1.0) * maxHueChange;
+                (random.nextDouble() * 2.0 - 1.0)
+                        * maxHueChange;
 
-        double mutatedHue = hue + hueChange;
+        double mutatedHue =
+                hue + hueChange;
 
-        return ((mutatedHue % 360.0) + 360.0) % 360.0;
+        return ((mutatedHue % 360.0) + 360.0)
+                % 360.0;
     }
-
-
 
     public double getSpeed() {
         return speed;
