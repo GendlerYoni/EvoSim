@@ -276,7 +276,7 @@ public class SimulationEngine {
             createHerbivore(
                     egg.getX(),
                     egg.getY(),
-                    energyModel.initialEnergy(),
+                    energyModel.hatchEnergy(),
                     egg.getGeneration(),
                     egg.getGenome(),
                     randomDirection()

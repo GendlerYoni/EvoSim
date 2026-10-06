@@ -33,7 +33,7 @@ class GenomeTest {
                 0.25,
                 4.0,
                 0.25,
-                4.0,
+                2.0,
                 0.25,
                 0.0
         ));
@@ -140,7 +140,7 @@ class GenomeTest {
                 0.25,
                 0.25,
                 0.25,
-                0.25,
+                0.5,
                 0.25,
                 180.0
         );
@@ -149,7 +149,7 @@ class GenomeTest {
                 4.0,
                 4.0,
                 4.0,
-                4.0,
+                2.0,
                 4.0,
                 180.0
         );
@@ -173,13 +173,13 @@ class GenomeTest {
         assertEquals(0.25, mutatedMinimum.getSpeed());
         assertEquals(0.25, mutatedMinimum.getSize());
         assertEquals(0.25, mutatedMinimum.getSenseRadius());
-        assertEquals(0.25, mutatedMinimum.getReproductionThreshold());
+        assertEquals(0.5, mutatedMinimum.getReproductionThreshold());
         assertEquals(0.25, mutatedMinimum.getEggHatchTime());
 
         assertEquals(4.0, mutatedMaximum.getSpeed());
         assertEquals(4.0, mutatedMaximum.getSize());
         assertEquals(4.0, mutatedMaximum.getSenseRadius());
-        assertEquals(4.0, mutatedMaximum.getReproductionThreshold());
+        assertEquals(2.0, mutatedMaximum.getReproductionThreshold());
         assertEquals(4.0, mutatedMaximum.getEggHatchTime());
     }
 
