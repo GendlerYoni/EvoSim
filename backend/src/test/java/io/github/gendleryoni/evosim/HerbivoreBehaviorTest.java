@@ -10,8 +10,8 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class HerbivoreBehaviorTest {
 
-    private Herbivore createHerbivore(double x, double y) {
-        Genome genome = new Genome(
+    private Genome createGenome() {
+        return new Genome(
                 1.0,
                 1.0,
                 1.0,
@@ -19,14 +19,34 @@ class HerbivoreBehaviorTest {
                 1.0,
                 180.0
         );
+    }
 
+    private Herbivore createHerbivore(
+            double x,
+            double y
+    ) {
         return new Herbivore(
                 1,
                 x,
                 y,
                 100.0,
                 1,
-                genome,
+                createGenome(),
+                Direction.NORTH
+        );
+    }
+
+    private Predator createPredator(
+            double x,
+            double y
+    ) {
+        return new Predator(
+                2,
+                x,
+                y,
+                100.0,
+                1,
+                createGenome(),
                 Direction.NORTH
         );
     }
@@ -57,60 +77,118 @@ class HerbivoreBehaviorTest {
 
     @Test
     void foodToRightCreatesRightwardAttraction() {
-        Herbivore herbivore = createHerbivore(50.0, 50.0);
-        Food food = new Food(60.0, 50.0);
+        Herbivore herbivore =
+                createHerbivore(
+                        50.0,
+                        50.0
+                );
 
-        HerbivoreBehavior behavior = new HerbivoreBehavior();
-        Random random = new Random(12345L);
+        Food food =
+                new Food(
+                        60.0,
+                        50.0
+                );
 
-        Vector2D direction = behavior.chooseDirection(
-                herbivore,
-                List.of(food),
-                random
+        HerbivoreBehavior behavior =
+                new HerbivoreBehavior();
+
+        Vector2D direction =
+                behavior.chooseDirection(
+                        herbivore,
+                        List.of(food),
+                        List.of(),
+                        new Random(12345L)
+                );
+
+        assertEquals(
+                0.01,
+                direction.x(),
+                1e-9
         );
 
-        assertEquals(0.01, direction.x(), 1e-9);
-        assertEquals(0.0, direction.y(), 1e-9);
+        assertEquals(
+                0.0,
+                direction.y(),
+                1e-9
+        );
     }
 
     @Test
     void foodAboveCreatesUpwardAttraction() {
-        Herbivore herbivore = createHerbivore(50.0, 50.0);
-        Food food = new Food(50.0, 40.0);
+        Herbivore herbivore =
+                createHerbivore(
+                        50.0,
+                        50.0
+                );
 
-        HerbivoreBehavior behavior = new HerbivoreBehavior();
-        Random random = new Random(12345L);
+        Food food =
+                new Food(
+                        50.0,
+                        40.0
+                );
 
-        Vector2D direction = behavior.chooseDirection(
-                herbivore,
-                List.of(food),
-                random
+        HerbivoreBehavior behavior =
+                new HerbivoreBehavior();
+
+        Vector2D direction =
+                behavior.chooseDirection(
+                        herbivore,
+                        List.of(food),
+                        List.of(),
+                        new Random(12345L)
+                );
+
+        assertEquals(
+                0.0,
+                direction.x(),
+                1e-9
         );
 
-        assertEquals(0.0, direction.x(), 1e-9);
-        assertEquals(-0.01, direction.y(), 1e-9);
+        assertEquals(
+                -0.01,
+                direction.y(),
+                1e-9
+        );
     }
 
     @Test
     void closerFoodCreatesStrongerAttraction() {
-        Herbivore herbivore = createHerbivore(50.0, 50.0);
+        Herbivore herbivore =
+                createHerbivore(
+                        50.0,
+                        50.0
+                );
 
-        Food closeFood = new Food(52.0, 50.0);
-        Food farFood = new Food(60.0, 50.0);
+        Food closeFood =
+                new Food(
+                        52.0,
+                        50.0
+                );
 
-        HerbivoreBehavior behavior = new HerbivoreBehavior();
+        Food farFood =
+                new Food(
+                        60.0,
+                        50.0
+                );
 
-        Vector2D closeDirection = behavior.chooseDirection(
-                herbivore,
-                List.of(closeFood),
-                new Random(12345L)
-        );
+        HerbivoreBehavior behavior =
+                new HerbivoreBehavior();
 
-        Vector2D farDirection = behavior.chooseDirection(
-                herbivore,
-                List.of(farFood),
-                new Random(12345L)
-        );
+        Vector2D closeDirection =
+                behavior.chooseDirection(
+                        herbivore,
+                        List.of(closeFood),
+                        List.of(),
+                        new Random(12345L)
+                );
+
+        Vector2D farDirection =
+                behavior.chooseDirection(
+                        herbivore,
+                        List.of(farFood),
+                        List.of(),
+                        new Random(12345L)
+                );
 
         assertEquals(
                 0.25,
@@ -132,65 +210,267 @@ class HerbivoreBehaviorTest {
 
     @Test
     void combinesFoodAttractionVectors() {
-        Herbivore herbivore = createHerbivore(50.0, 50.0);
+        Herbivore herbivore =
+                createHerbivore(
+                        50.0,
+                        50.0
+                );
 
-        Food rightFood = new Food(60.0, 50.0);
-        Food topFood = new Food(50.0, 40.0);
+        Food rightFood =
+                new Food(
+                        60.0,
+                        50.0
+                );
 
-        HerbivoreBehavior behavior = new HerbivoreBehavior();
+        Food topFood =
+                new Food(
+                        50.0,
+                        40.0
+                );
 
-        Vector2D direction = behavior.chooseDirection(
-                herbivore,
-                List.of(rightFood, topFood),
-                new Random(12345L)
+        HerbivoreBehavior behavior =
+                new HerbivoreBehavior();
+
+        Vector2D direction =
+                behavior.chooseDirection(
+                        herbivore,
+                        List.of(
+                                rightFood,
+                                topFood
+                        ),
+                        List.of(),
+                        new Random(12345L)
+                );
+
+        assertEquals(
+                0.01,
+                direction.x(),
+                1e-9
         );
 
-        assertEquals(0.01, direction.x(), 1e-9);
-        assertEquals(-0.01, direction.y(), 1e-9);
+        assertEquals(
+                -0.01,
+                direction.y(),
+                1e-9
+        );
+    }
+
+    @Test
+    void predatorToRightCreatesLeftwardAvoidance() {
+        Herbivore herbivore =
+                createHerbivore(
+                        50.0,
+                        50.0
+                );
+
+        Predator predator =
+                createPredator(
+                        60.0,
+                        50.0
+                );
+
+        HerbivoreBehavior behavior =
+                new HerbivoreBehavior();
+
+        Vector2D direction =
+                behavior.chooseDirection(
+                        herbivore,
+                        List.of(),
+                        List.of(predator),
+                        new Random(12345L)
+                );
+
+        assertEquals(
+                -0.03,
+                direction.x(),
+                1e-9
+        );
+
+        assertEquals(
+                0.0,
+                direction.y(),
+                1e-9
+        );
+    }
+
+    @Test
+    void predatorAboveCreatesDownwardAvoidance() {
+        Herbivore herbivore =
+                createHerbivore(
+                        50.0,
+                        50.0
+                );
+
+        Predator predator =
+                createPredator(
+                        50.0,
+                        40.0
+                );
+
+        HerbivoreBehavior behavior =
+                new HerbivoreBehavior();
+
+        Vector2D direction =
+                behavior.chooseDirection(
+                        herbivore,
+                        List.of(),
+                        List.of(predator),
+                        new Random(12345L)
+                );
+
+        assertEquals(
+                0.0,
+                direction.x(),
+                1e-9
+        );
+
+        assertEquals(
+                0.03,
+                direction.y(),
+                1e-9
+        );
+    }
+
+    @Test
+    void combinesPredatorAvoidanceVectors() {
+        Herbivore herbivore =
+                createHerbivore(
+                        50.0,
+                        50.0
+                );
+
+        Predator rightPredator =
+                createPredator(
+                        60.0,
+                        50.0
+                );
+
+        Predator topPredator =
+                createPredator(
+                        50.0,
+                        40.0
+                );
+
+        HerbivoreBehavior behavior =
+                new HerbivoreBehavior();
+
+        Vector2D direction =
+                behavior.chooseDirection(
+                        herbivore,
+                        List.of(),
+                        List.of(
+                                rightPredator,
+                                topPredator
+                        ),
+                        new Random(12345L)
+                );
+
+        assertEquals(
+                -0.03,
+                direction.x(),
+                1e-9
+        );
+
+        assertEquals(
+                0.03,
+                direction.y(),
+                1e-9
+        );
+    }
+
+    @Test
+    void combinesFoodAttractionAndPredatorAvoidance() {
+        Herbivore herbivore =
+                createHerbivore(
+                        50.0,
+                        50.0
+                );
+
+        Food food =
+                new Food(
+                        60.0,
+                        50.0
+                );
+
+        Predator predator =
+                createPredator(
+                        60.0,
+                        50.0
+                );
+
+        HerbivoreBehavior behavior =
+                new HerbivoreBehavior();
+
+        Vector2D direction =
+                behavior.chooseDirection(
+                        herbivore,
+                        List.of(food),
+                        List.of(predator),
+                        new Random(12345L)
+                );
+
+        /*
+         * Food:
+         * +1 / 10^2 = +0.01
+         *
+         * Predator avoidance:
+         * -3 / 10^2 = -0.03
+         *
+         * Result:
+         * -0.02
+         */
+        assertEquals(
+                -0.02,
+                direction.x(),
+                1e-9
+        );
+
+        assertEquals(
+                0.0,
+                direction.y(),
+                1e-9
+        );
     }
 
     @Test
     void oppositeFoodAttractionsFallBackToExploration() {
-        Herbivore herbivore = createHerbivore(50.0, 50.0);
+        Herbivore herbivore =
+                createHerbivore(
+                        50.0,
+                        50.0
+                );
 
-        Food leftFood = new Food(40.0, 50.0);
-        Food rightFood = new Food(60.0, 50.0);
+        Food leftFood =
+                new Food(
+                        40.0,
+                        50.0
+                );
 
-        HerbivoreBehavior behavior = new HerbivoreBehavior();
+        Food rightFood =
+                new Food(
+                        60.0,
+                        50.0
+                );
 
-        Random random = new ControlledRandom(
-                0.10,
-                0
-        );
+        HerbivoreBehavior behavior =
+                new HerbivoreBehavior();
 
-        Vector2D direction = behavior.chooseDirection(
-                herbivore,
-                List.of(leftFood, rightFood),
-                random
-        );
+        Random random =
+                new ControlledRandom(
+                        0.10,
+                        0
+                );
 
-        assertEquals(
-                Direction.NORTH.getVector(),
-                direction
-        );
-    }
-
-    @Test
-    void noFoodFallsBackToPersistentExplorationDirection() {
-        Herbivore herbivore = createHerbivore(50.0, 50.0);
-
-        HerbivoreBehavior behavior = new HerbivoreBehavior();
-
-        Random random = new ControlledRandom(
-                0.10,
-                0
-        );
-
-        Vector2D direction = behavior.chooseDirection(
-                herbivore,
-                List.of(),
-                random
-        );
+        Vector2D direction =
+                behavior.chooseDirection(
+                        herbivore,
+                        List.of(
+                                leftFood,
+                                rightFood
+                        ),
+                        List.of(),
+                        random
+                );
 
         assertEquals(
                 Direction.NORTH.getVector(),
@@ -199,73 +479,103 @@ class HerbivoreBehaviorTest {
     }
 
     @Test
-    void explorationCanChooseAlternativeDirection() {
-        Herbivore herbivore = createHerbivore(50.0, 50.0);
+    void noFoodOrPredatorsFallsBackToPersistentExplorationDirection() {
+        Herbivore herbivore =
+                createHerbivore(
+                        50.0,
+                        50.0
+                );
 
-        HerbivoreBehavior behavior = new HerbivoreBehavior();
+        HerbivoreBehavior behavior =
+                new HerbivoreBehavior();
 
-        Random random = new ControlledRandom(
-                0.90,
-                0
-        );
+        Random random =
+                new ControlledRandom(
+                        0.10,
+                        0
+                );
 
-        Vector2D direction = behavior.chooseDirection(
-                herbivore,
-                List.of(),
-                random
-        );
+        Vector2D direction =
+                behavior.chooseDirection(
+                        herbivore,
+                        List.of(),
+                        List.of(),
+                        random
+                );
 
         assertEquals(
-                Direction.NORTH_EAST.getVector(),
+                Direction.NORTH.getVector(),
                 direction
-        );
-    }
-
-    @Test
-    void explorationDeviationDoesNotChangePersistentDirection() {
-        Herbivore herbivore = createHerbivore(50.0, 50.0);
-
-        HerbivoreBehavior behavior = new HerbivoreBehavior();
-
-        Random random = new ControlledRandom(
-                0.90,
-                0
-        );
-
-        Vector2D direction = behavior.chooseDirection(
-                herbivore,
-                List.of(),
-                random
-        );
-
-        assertEquals(
-                Direction.NORTH_EAST.getVector(),
-                direction
-        );
-
-        assertEquals(
-                Direction.NORTH,
-                herbivore.getExplorationDirection()
         );
     }
 
     @Test
     void foodAtExactHerbivorePositionFallsBackToExploration() {
-        Herbivore herbivore = createHerbivore(50.0, 50.0);
-        Food food = new Food(50.0, 50.0);
+        Herbivore herbivore =
+                createHerbivore(
+                        50.0,
+                        50.0
+                );
 
-        HerbivoreBehavior behavior = new HerbivoreBehavior();
+        Food food =
+                new Food(
+                        50.0,
+                        50.0
+                );
 
-        Random random = new ControlledRandom(
-                0.10,
-                0
+        HerbivoreBehavior behavior =
+                new HerbivoreBehavior();
+
+        Random random =
+                new ControlledRandom(
+                        0.10,
+                        0
+                );
+
+        Vector2D direction =
+                behavior.chooseDirection(
+                        herbivore,
+                        List.of(food),
+                        List.of(),
+                        random
+                );
+
+        assertEquals(
+                Direction.NORTH.getVector(),
+                direction
         );
+    }
 
-        Vector2D direction = behavior.chooseDirection(
-                herbivore,
-                List.of(food),
-                random
-        );
+    @Test
+    void predatorAtExactHerbivorePositionFallsBackToExploration() {
+        Herbivore herbivore =
+                createHerbivore(
+                        50.0,
+                        50.0
+                );
+
+        Predator predator =
+                createPredator(
+                        50.0,
+                        50.0
+                );
+
+        HerbivoreBehavior behavior =
+                new HerbivoreBehavior();
+
+        Random random =
+                new ControlledRandom(
+                        0.10,
+                        0
+                );
+
+        Vector2D direction =
+                behavior.chooseDirection(
+                        herbivore,
+                        List.of(),
+                        List.of(predator),
+                        random
+                );
 
         assertEquals(
                 Direction.NORTH.getVector(),
@@ -275,12 +585,14 @@ class HerbivoreBehaviorTest {
 
     @Test
     void rejectsNullHerbivore() {
-        HerbivoreBehavior behavior = new HerbivoreBehavior();
+        HerbivoreBehavior behavior =
+                new HerbivoreBehavior();
 
         assertThrows(
                 IllegalArgumentException.class,
                 () -> behavior.chooseDirection(
                         null,
+                        List.of(),
                         List.of(),
                         new Random(12345L)
                 )
@@ -289,13 +601,42 @@ class HerbivoreBehaviorTest {
 
     @Test
     void rejectsNullFoodList() {
-        Herbivore herbivore = createHerbivore(50.0, 50.0);
-        HerbivoreBehavior behavior = new HerbivoreBehavior();
+        Herbivore herbivore =
+                createHerbivore(
+                        50.0,
+                        50.0
+                );
+
+        HerbivoreBehavior behavior =
+                new HerbivoreBehavior();
 
         assertThrows(
                 IllegalArgumentException.class,
                 () -> behavior.chooseDirection(
                         herbivore,
+                        null,
+                        List.of(),
+                        new Random(12345L)
+                )
+        );
+    }
+
+    @Test
+    void rejectsNullPredatorList() {
+        Herbivore herbivore =
+                createHerbivore(
+                        50.0,
+                        50.0
+                );
+
+        HerbivoreBehavior behavior =
+                new HerbivoreBehavior();
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> behavior.chooseDirection(
+                        herbivore,
+                        List.of(),
                         null,
                         new Random(12345L)
                 )
@@ -304,13 +645,20 @@ class HerbivoreBehaviorTest {
 
     @Test
     void rejectsNullRandom() {
-        Herbivore herbivore = createHerbivore(50.0, 50.0);
-        HerbivoreBehavior behavior = new HerbivoreBehavior();
+        Herbivore herbivore =
+                createHerbivore(
+                        50.0,
+                        50.0
+                );
+
+        HerbivoreBehavior behavior =
+                new HerbivoreBehavior();
 
         assertThrows(
                 IllegalArgumentException.class,
                 () -> behavior.chooseDirection(
                         herbivore,
+                        List.of(),
                         List.of(),
                         null
                 )
@@ -319,19 +667,61 @@ class HerbivoreBehaviorTest {
 
     @Test
     void rejectsNullFoodInsideList() {
-        Herbivore herbivore = createHerbivore(50.0, 50.0);
-        HerbivoreBehavior behavior = new HerbivoreBehavior();
+        Herbivore herbivore =
+                createHerbivore(
+                        50.0,
+                        50.0
+                );
 
-        List<Food> foods = Arrays.asList(
-                new Food(60.0, 50.0),
-                null
-        );
+        HerbivoreBehavior behavior =
+                new HerbivoreBehavior();
+
+        List<Food> foods =
+                Arrays.asList(
+                        new Food(
+                                60.0,
+                                50.0
+                        ),
+                        null
+                );
 
         assertThrows(
                 IllegalArgumentException.class,
                 () -> behavior.chooseDirection(
                         herbivore,
                         foods,
+                        List.of(),
+                        new Random(12345L)
+                )
+        );
+    }
+
+    @Test
+    void rejectsNullPredatorInsideList() {
+        Herbivore herbivore =
+                createHerbivore(
+                        50.0,
+                        50.0
+                );
+
+        HerbivoreBehavior behavior =
+                new HerbivoreBehavior();
+
+        List<Predator> predators =
+                Arrays.asList(
+                        createPredator(
+                                60.0,
+                                50.0
+                        ),
+                        null
+                );
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> behavior.chooseDirection(
+                        herbivore,
+                        List.of(),
+                        predators,
                         new Random(12345L)
                 )
         );

@@ -27,6 +27,7 @@ class SimulationConfigTest {
                         800.0,
                         genome,
                         20,
+                        5,
                         100,
                         12345L,
                         0.05,
@@ -52,6 +53,11 @@ class SimulationConfigTest {
         assertEquals(
                 20,
                 config.getInitialHerbivores()
+        );
+
+        assertEquals(
+                5,
+                config.getInitialPredators()
         );
 
         assertEquals(
@@ -89,6 +95,7 @@ class SimulationConfigTest {
                         createGenome(),
                         0,
                         0,
+                        0,
                         12345L,
                         0.0,
                         0,
@@ -98,6 +105,11 @@ class SimulationConfigTest {
         assertEquals(
                 0,
                 config.getInitialHerbivores()
+        );
+
+        assertEquals(
+                0,
+                config.getInitialPredators()
         );
 
         assertEquals(
@@ -131,6 +143,26 @@ class SimulationConfigTest {
                         createGenome(),
                         -1,
                         0,
+                        0,
+                        12345L,
+                        0.0,
+                        0,
+                        500
+                )
+        );
+    }
+
+    @Test
+    void rejectsNegativeInitialPredatorCount() {
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> new SimulationConfig(
+                        1000.0,
+                        800.0,
+                        createGenome(),
+                        0,
+                        -1,
+                        0,
                         12345L,
                         0.0,
                         0,
@@ -147,6 +179,7 @@ class SimulationConfigTest {
                         1000.0,
                         800.0,
                         createGenome(),
+                        0,
                         0,
                         -1,
                         12345L,
@@ -167,6 +200,7 @@ class SimulationConfigTest {
                         createGenome(),
                         0,
                         0,
+                        0,
                         12345L,
                         0.0,
                         0,
@@ -180,6 +214,7 @@ class SimulationConfigTest {
                         1000.0,
                         0.0,
                         createGenome(),
+                        0,
                         0,
                         0,
                         12345L,
@@ -197,6 +232,7 @@ class SimulationConfigTest {
                         createGenome(),
                         0,
                         0,
+                        0,
                         12345L,
                         0.0,
                         0,
@@ -210,6 +246,7 @@ class SimulationConfigTest {
                         1000.0,
                         -1.0,
                         createGenome(),
+                        0,
                         0,
                         0,
                         12345L,
@@ -230,6 +267,7 @@ class SimulationConfigTest {
                         createGenome(),
                         0,
                         0,
+                        0,
                         12345L,
                         0.0,
                         0,
@@ -243,6 +281,7 @@ class SimulationConfigTest {
                         1000.0,
                         Double.POSITIVE_INFINITY,
                         createGenome(),
+                        0,
                         0,
                         0,
                         12345L,
@@ -263,6 +302,7 @@ class SimulationConfigTest {
                         null,
                         0,
                         0,
+                        0,
                         12345L,
                         0.0,
                         0,
@@ -279,6 +319,7 @@ class SimulationConfigTest {
                         1000.0,
                         800.0,
                         createGenome(),
+                        0,
                         0,
                         0,
                         12345L,
@@ -299,6 +340,7 @@ class SimulationConfigTest {
                         createGenome(),
                         0,
                         0,
+                        0,
                         12345L,
                         Double.NaN,
                         0,
@@ -312,6 +354,7 @@ class SimulationConfigTest {
                         1000.0,
                         800.0,
                         createGenome(),
+                        0,
                         0,
                         0,
                         12345L,
@@ -332,6 +375,7 @@ class SimulationConfigTest {
                         createGenome(),
                         0,
                         0,
+                        0,
                         12345L,
                         0.0,
                         -1,
@@ -348,6 +392,7 @@ class SimulationConfigTest {
                         1000.0,
                         800.0,
                         createGenome(),
+                        0,
                         0,
                         0,
                         12345L,
@@ -367,6 +412,7 @@ class SimulationConfigTest {
                         800.0,
                         createGenome(),
                         0,
+                        0,
                         101,
                         12345L,
                         0.0,
@@ -383,6 +429,7 @@ class SimulationConfigTest {
                         1000.0,
                         800.0,
                         createGenome(),
+                        0,
                         0,
                         100,
                         12345L,

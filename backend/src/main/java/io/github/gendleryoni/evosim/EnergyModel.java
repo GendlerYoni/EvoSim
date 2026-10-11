@@ -6,6 +6,7 @@ final class EnergyModel {
     private static final double FOOD_ENERGY_GAIN = 100.0;
     private static final double REPRODUCTION_ENERGY_COST = 80.0;
     private static final double HATCH_ENERGY = 80.0;
+    private static final double BASE_PREDATION_ENERGY_GAIN = 100.0;
 
     private static final double TRAIT_COST_WEIGHT = 1.0 / 3.0;
 
@@ -44,6 +45,11 @@ final class EnergyModel {
                 );
 
         return senseCost + speedCost + sizeCost;
+    }
+
+    double predationEnergyGain(Genome preyGenome) {
+        return BASE_PREDATION_ENERGY_GAIN
+                * Math.sqrt(preyGenome.getSize());
     }
 
     double reproductionEnergyCost() {

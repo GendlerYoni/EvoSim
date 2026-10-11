@@ -5,11 +5,13 @@ import java.util.Random;
 
 public class HerbivoreBehavior {
 
-    private static final double PERSISTENT_DIRECTION_PROBABILITY = 0.65;
+    private static final double PERSISTENT_DIRECTION_PROBABILITY = 1.0;
+    private static final double PREDATOR_AVOIDANCE_WEIGHT = 3.0;
 
     public Vector2D chooseDirection(
             Herbivore herbivore,
             List<Food> sensedFoods,
+            List<Predator> sensedPredators,
             Random random
     ) {
         if (herbivore == null) {
@@ -21,6 +23,12 @@ public class HerbivoreBehavior {
         if (sensedFoods == null) {
             throw new IllegalArgumentException(
                     "Sensed food list cannot be null"
+            );
+        }
+
+        if (sensedPredators == null) {
+            throw new IllegalArgumentException(
+                    "Sensed predator list cannot be null"
             );
         }
 
@@ -36,8 +44,19 @@ public class HerbivoreBehavior {
                         sensedFoods
                 );
 
-        if (foodAttraction.length() > 0.0) {
-            return foodAttraction;
+        Vector2D predatorAvoidance =
+                calculatePredatorAvoidance(
+                        herbivore,
+                        sensedPredators
+                );
+
+        Vector2D desiredDirection =
+                foodAttraction.add(
+                        predatorAvoidance
+                );
+
+        if (desiredDirection.length() > 0.0) {
+            return desiredDirection;
         }
 
         return chooseExplorationDirection(
@@ -50,7 +69,8 @@ public class HerbivoreBehavior {
             Herbivore herbivore,
             List<Food> sensedFoods
     ) {
-        Vector2D total = new Vector2D(0.0, 0.0);
+        Vector2D total =
+                new Vector2D(0.0, 0.0);
 
         for (Food food : sensedFoods) {
             if (food == null) {
@@ -86,7 +106,58 @@ public class HerbivoreBehavior {
             Vector2D contribution =
                     normalizedDirection.scale(weight);
 
-            total = total.add(contribution);
+            total =
+                    total.add(contribution);
+        }
+
+        return total;
+    }
+
+    private Vector2D calculatePredatorAvoidance(
+            Herbivore herbivore,
+            List<Predator> sensedPredators
+    ) {
+        Vector2D total =
+                new Vector2D(0.0, 0.0);
+
+        for (Predator predator : sensedPredators) {
+            if (predator == null) {
+                throw new IllegalArgumentException(
+                        "Sensed predator list cannot contain null"
+                );
+            }
+
+            double dx =
+                    herbivore.getX() - predator.getX();
+
+            double dy =
+                    herbivore.getY() - predator.getY();
+
+            Vector2D directionAwayFromPredator =
+                    new Vector2D(dx, dy);
+
+            double distance =
+                    directionAwayFromPredator.length();
+
+            if (distance == 0.0) {
+                continue;
+            }
+
+            Vector2D normalizedDirection =
+                    directionAwayFromPredator.normalized();
+
+            // Tuning decision:
+            // predator avoidance currently has 3x the base
+            // inverse-square influence of food attraction.
+            double weight =
+                    PREDATOR_AVOIDANCE_WEIGHT
+                            / (distance * distance);
+
+            Vector2D contribution =
+                    normalizedDirection.scale(weight);
+
+            total =
+                    total.add(contribution);
         }
 
         return total;
@@ -104,10 +175,13 @@ public class HerbivoreBehavior {
             return persistentDirection.getVector();
         }
 
-        Direction[] directions = Direction.values();
+        Direction[] directions =
+                Direction.values();
 
         int alternativeIndex =
-                random.nextInt(directions.length - 1);
+                random.nextInt(
+                        directions.length - 1
+                );
 
         for (Direction direction : directions) {
             if (direction == persistentDirection) {

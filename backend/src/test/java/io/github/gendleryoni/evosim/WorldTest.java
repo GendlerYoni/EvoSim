@@ -31,6 +31,19 @@ class WorldTest {
         );
     }
 
+
+    private Predator createPredator(double x, double y) {
+        return new Predator(
+                2,
+                x,
+                y,
+                100.0,
+                1,
+                createGenome(),
+                Direction.NORTH
+        );
+    }
+
     @Test
     void storesConfiguredDimensions() {
         World world = new World(100.0, 200.0);
@@ -1376,6 +1389,447 @@ class WorldTest {
                         Direction.EAST.getVector(),
                         1.0
                 )
+        );
+    }
+
+    @Test
+    void findsOnlyHerbivoresWithinRadius() {
+        World world =
+                new World(
+                        100.0,
+                        100.0
+                );
+
+        Herbivore closeHerbivore =
+                createHerbivore(
+                        53.0,
+                        54.0
+                );
+
+        Herbivore farHerbivore =
+                new Herbivore(
+                        3,
+                        75.0,
+                        75.0,
+                        100.0,
+                        1,
+                        createGenome(),
+                        Direction.NORTH
+                );
+
+        world.addHerbivore(closeHerbivore);
+        world.addHerbivore(farHerbivore);
+
+        List<Herbivore> nearbyHerbivores =
+                world.findHerbivoresWithinRadius(
+                        50.0,
+                        50.0,
+                        5.0
+                );
+
+        assertEquals(
+                1,
+                nearbyHerbivores.size()
+        );
+
+        assertSame(
+                closeHerbivore,
+                nearbyHerbivores.get(0)
+        );
+
+        assertFalse(
+                nearbyHerbivores.contains(farHerbivore)
+        );
+    }
+
+    @Test
+    void addsPredatorInsideCreatureMovementBounds() {
+        World world =
+                new World(
+                        100.0,
+                        100.0
+                );
+
+        Predator predator =
+                createPredator(
+                        50.0,
+                        50.0
+                );
+
+        world.addPredator(predator);
+
+        assertEquals(
+                1,
+                world.getPredators().size()
+        );
+
+        assertSame(
+                predator,
+                world.getPredators().get(0)
+        );
+
+        assertTrue(
+                world.getHerbivores().isEmpty()
+        );
+    }
+
+    @Test
+    void rejectsPredatorOutsideCreatureMovementBounds() {
+        World world =
+                new World(
+                        100.0,
+                        100.0
+                );
+
+        double margin =
+                Creature.calculateMaximumRadius();
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> world.addPredator(
+                        createPredator(
+                                margin - 0.1,
+                                50.0
+                        )
+                )
+        );
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> world.addPredator(
+                        createPredator(
+                                100.0 - margin + 0.1,
+                                50.0
+                        )
+                )
+        );
+    }
+
+    @Test
+    void rejectsAddingNullPredator() {
+        World world =
+                new World(
+                        100.0,
+                        100.0
+                );
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> world.addPredator(null)
+        );
+    }
+
+    @Test
+    void removesExistingPredator() {
+        World world =
+                new World(
+                        100.0,
+                        100.0
+                );
+
+        Predator predator =
+                createPredator(
+                        50.0,
+                        50.0
+                );
+
+        world.addPredator(predator);
+        world.removePredator(predator);
+
+        assertTrue(
+                world.getPredators().isEmpty()
+        );
+    }
+
+    @Test
+    void rejectsRemovingPredatorThatDoesNotExistInWorld() {
+        World world =
+                new World(
+                        100.0,
+                        100.0
+                );
+
+        Predator predator =
+                createPredator(
+                        50.0,
+                        50.0
+                );
+
+        assertThrows(
+                IllegalStateException.class,
+                () -> world.removePredator(predator)
+        );
+    }
+
+    @Test
+    void predatorListCannotBeModifiedExternally() {
+        World world =
+                new World(
+                        100.0,
+                        100.0
+                );
+
+        Predator predator =
+                createPredator(
+                        50.0,
+                        50.0
+                );
+
+        world.addPredator(predator);
+
+        List<Predator> predators =
+                world.getPredators();
+
+        assertThrows(
+                UnsupportedOperationException.class,
+                predators::clear
+        );
+
+        assertEquals(
+                1,
+                world.getPredators().size()
+        );
+
+        assertSame(
+                predator,
+                world.getPredators().get(0)
+        );
+    }
+
+    @Test
+    void findsOnlyPredatorsWithinRadius() {
+        World world =
+                new World(
+                        100.0,
+                        100.0
+                );
+
+        Predator closePredator =
+                createPredator(
+                        53.0,
+                        54.0
+                );
+
+        Predator farPredator =
+                new Predator(
+                        3,
+                        75.0,
+                        75.0,
+                        100.0,
+                        1,
+                        createGenome(),
+                        Direction.NORTH
+                );
+
+        world.addPredator(closePredator);
+        world.addPredator(farPredator);
+
+        List<Predator> nearbyPredators =
+                world.findPredatorsWithinRadius(
+                        50.0,
+                        50.0,
+                        5.0
+                );
+
+        assertEquals(
+                1,
+                nearbyPredators.size()
+        );
+
+        assertSame(
+                closePredator,
+                nearbyPredators.get(0)
+        );
+
+        assertFalse(
+                nearbyPredators.contains(farPredator)
+        );
+    }
+
+    @Test
+    void movesPredatorNormally() {
+        World world =
+                new World(
+                        100.0,
+                        100.0
+                );
+
+        Predator predator =
+                createPredator(
+                        50.0,
+                        50.0
+                );
+
+        world.addPredator(predator);
+
+        boolean hitWall =
+                world.moveCreature(
+                        predator,
+                        new Vector2D(1.0, 0.0),
+                        5.0
+                );
+
+        assertFalse(hitWall);
+
+        assertEquals(
+                55.0,
+                predator.getX(),
+                1e-9
+        );
+
+        assertEquals(
+                50.0,
+                predator.getY(),
+                1e-9
+        );
+    }
+
+    @Test
+    void addsPredatorEggInsideCreatureMovementBounds() {
+        World world =
+                new World(
+                        100.0,
+                        100.0
+                );
+
+        Egg egg =
+                world.addPredatorEgg(
+                        50.0,
+                        50.0,
+                        createGenome(),
+                        2,
+                        50
+                );
+
+        assertEquals(
+                1,
+                world.getPredatorEggs().size()
+        );
+
+        assertSame(
+                egg,
+                world.getPredatorEggs().get(0)
+        );
+
+        assertTrue(
+                world.getHerbivoreEggs().isEmpty()
+        );
+    }
+
+    @Test
+    void rejectsPredatorEggOutsideCreatureMovementBounds() {
+        World world =
+                new World(
+                        100.0,
+                        100.0
+                );
+
+        double margin =
+                Creature.calculateMaximumRadius();
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> world.addPredatorEgg(
+                        margin - 0.1,
+                        50.0,
+                        createGenome(),
+                        2,
+                        50
+                )
+        );
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> world.addPredatorEgg(
+                        100.0 - margin + 0.1,
+                        50.0,
+                        createGenome(),
+                        2,
+                        50
+                )
+        );
+    }
+
+    @Test
+    void removesExistingPredatorEgg() {
+        World world =
+                new World(
+                        100.0,
+                        100.0
+                );
+
+        Egg egg =
+                world.addPredatorEgg(
+                        50.0,
+                        50.0,
+                        createGenome(),
+                        2,
+                        50
+                );
+
+        world.removePredatorEgg(egg);
+
+        assertTrue(
+                world.getPredatorEggs().isEmpty()
+        );
+    }
+
+    @Test
+    void rejectsRemovingPredatorEggThatDoesNotExistInWorld() {
+        World world =
+                new World(
+                        100.0,
+                        100.0
+                );
+
+        Egg egg =
+                new Egg(
+                        50.0,
+                        50.0,
+                        createGenome(),
+                        2,
+                        50
+                );
+
+        assertThrows(
+                IllegalStateException.class,
+                () -> world.removePredatorEgg(egg)
+        );
+    }
+
+    @Test
+    void predatorEggListCannotBeModifiedExternally() {
+        World world =
+                new World(
+                        100.0,
+                        100.0
+                );
+
+        Egg egg =
+                world.addPredatorEgg(
+                        50.0,
+                        50.0,
+                        createGenome(),
+                        2,
+                        50
+                );
+
+        List<Egg> eggs =
+                world.getPredatorEggs();
+
+        assertThrows(
+                UnsupportedOperationException.class,
+                eggs::clear
+        );
+
+        assertEquals(
+                1,
+                world.getPredatorEggs().size()
+        );
+
+        assertSame(
+                egg,
+                world.getPredatorEggs().get(0)
         );
     }
 }
