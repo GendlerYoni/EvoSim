@@ -6,6 +6,7 @@ public class SimulationConfig {
     private final double worldHeight;
     private final Genome initialGenome;
     private final int initialHerbivores;
+    private final int initialPredators;
     private final int initialFood;
     private final long seed;
     private final double mutationStrength;
@@ -17,12 +18,13 @@ public class SimulationConfig {
             double worldHeight,
             Genome initialGenome,
             int initialHerbivores,
+            int initialPredators,
             int initialFood,
             long seed,
             double mutationStrength,
             int foodSpawnMaxPerTick,
             int foodCap
-    ) {
+    ){
         if (!Double.isFinite(worldWidth)
                 || !Double.isFinite(worldHeight)
                 || worldWidth <= 0
@@ -41,6 +43,12 @@ public class SimulationConfig {
         if (initialHerbivores < 0) {
             throw new IllegalArgumentException(
                     "Initial herbivore count cannot be negative"
+            );
+        }
+
+        if (initialPredators < 0) {
+            throw new IllegalArgumentException(
+                    "Initial predator count cannot be negative"
             );
         }
 
@@ -79,6 +87,7 @@ public class SimulationConfig {
         this.worldHeight = worldHeight;
         this.initialGenome = initialGenome;
         this.initialHerbivores = initialHerbivores;
+        this.initialPredators = initialPredators;
         this.initialFood = initialFood;
         this.seed = seed;
         this.mutationStrength = mutationStrength;
@@ -100,6 +109,10 @@ public class SimulationConfig {
 
     public int getInitialHerbivores() {
         return initialHerbivores;
+    }
+
+    public int getInitialPredators() {
+        return initialPredators;
     }
 
     public int getInitialFood() {

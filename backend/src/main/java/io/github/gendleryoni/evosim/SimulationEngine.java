@@ -7,12 +7,17 @@ public class SimulationEngine {
 
     // Initial V1 timestep; subject to tuning as simulation behavior is tested.
     private static final double TICK_DURATION_SECONDS = 1.0 / 20.0;
+    private static final double MIN_PREDATOR_TO_PREY_SIZE_RATIO = 0.8;
+
+    private static final double PREDATOR_SPEED_MULTIPLIER = 1.2;
+    private static final double PREDATOR_ENERGY_COST_MULTIPLIER = 1;
 
     private final SimulationConfig config;
     private final World world;
     private final Random random;
     private final HerbivoreBehavior herbivoreBehavior;
     private final EnergyModel energyModel;
+    private final PredatorBehavior predatorBehavior;
 
     private long tickCount;
     private int nextCreatureId;
@@ -33,6 +38,7 @@ public class SimulationEngine {
 
         this.random = new Random(config.getSeed());
         this.herbivoreBehavior = new HerbivoreBehavior();
+        this.predatorBehavior = new PredatorBehavior();
         this.energyModel = new EnergyModel();
 
         this.tickCount = 0;
@@ -43,12 +49,13 @@ public class SimulationEngine {
 
     private void initializeSimulation() {
         createInitialHerbivores();
+        createInitialPredators();
         createInitialFood();
     }
 
     private void createInitialHerbivores() {
         for (int i = 0; i < config.getInitialHerbivores(); i++) {
-            Genome genome = createInitialHerbivoreGenome();
+            Genome genome = createInitialGenome();
 
             double boundaryMargin =
                     Creature.calculateMaximumRadius();
@@ -67,6 +74,40 @@ public class SimulationEngine {
                     randomDirection();
 
             createHerbivore(
+                    x,
+                    y,
+                    energyModel.initialEnergy(),
+                    1,
+                    genome,
+                    explorationDirection
+            );
+        }
+    }
+
+    private void createInitialPredators() {
+        for (int i = 0; i < config.getInitialPredators(); i++) {
+            Genome genome =
+                    createInitialGenome();
+
+            double boundaryMargin =
+                    Creature.calculateMaximumRadius();
+
+            double x =
+                    randomCoordinate(
+                            boundaryMargin,
+                            world.getWidth()
+                    );
+
+            double y =
+                    randomCoordinate(
+                            boundaryMargin,
+                            world.getHeight()
+                    );
+
+            Direction explorationDirection =
+                    randomDirection();
+
+            createPredator(
                     x,
                     y,
                     energyModel.initialEnergy(),
@@ -120,20 +161,44 @@ public class SimulationEngine {
     }
 
     public void tick() {
-        List<Herbivore> herbivores = world.getHerbivores();
-
         int herbivoreEggsAtTickStart =
                 world.getHerbivoreEggs().size();
 
-        // V1 decision: herbivores are processed in reverse insertion order.
-        // Since newly created herbivores are appended to the list, newer
-        // creatures receive priority in same-tick interaction conflicts.
-        // Revisit this ordering if simulation results show meaningful bias.
+        int predatorEggsAtTickStart =
+                world.getPredatorEggs().size();
+
+        resolvePredation();
+
+        List<Herbivore> herbivores =
+                world.getHerbivores();
+
+        // V1 decision: creatures are processed in reverse insertion order.
+        // Since newly created creatures are appended to their species list,
+        // newer creatures receive priority in same-tick interaction conflicts.
+        // Herbivores are processed before predators to give prey an intentional
+        // escape advantage. Revisit if simulation results show meaningful bias.
         for (int i = herbivores.size() - 1; i >= 0; i--) {
-            processHerbivore(herbivores.get(i));
+            processHerbivore(
+                    herbivores.get(i)
+            );
         }
 
-        processHerbivoreEggs(herbivoreEggsAtTickStart);
+        List<Predator> predators =
+                world.getPredators();
+
+        for (int i = predators.size() - 1; i >= 0; i--) {
+            processPredator(
+                    predators.get(i)
+            );
+        }
+
+        processHerbivoreEggs(
+                herbivoreEggsAtTickStart
+        );
+
+        processPredatorEggs(
+                predatorEggsAtTickStart
+        );
 
         spawnFoodForTick();
 
@@ -198,11 +263,29 @@ public class SimulationEngine {
             reproduceHerbivore(herbivore);
         }
 
+        List<Predator> nearbyPredators =
+                world.findPredatorsWithinRadius(
+                        herbivore.getX(),
+                        herbivore.getY(),
+                        senseRadius
+                );
+
+        nearbyPredators.removeIf(
+                predator ->
+                        !canPredatorEatHerbivore(
+                                predator,
+                                herbivore
+                        )
+        );
+
         // nearbyFoods now contains only sensed, non-eaten food.
+        // nearbyPredators now contains only predators that can
+        // legally eat this herbivore.
         Vector2D desiredDirection =
                 herbivoreBehavior.chooseDirection(
                         herbivore,
                         nearbyFoods,
+                        nearbyPredators,
                         random
                 );
 
@@ -236,6 +319,73 @@ public class SimulationEngine {
         );
     }
 
+    private void processPredator(Predator predator) {
+
+        predator.advanceReproductionCooldown();
+
+        if (predator.isDead()) {
+            world.removePredator(predator);
+            return;
+        }
+
+        if (predator.canReproduce()) {
+            reproducePredator(predator);
+        }
+
+        double senseRadius =
+                predator.getSenseRadius();
+
+        List<Herbivore> nearbyHerbivores =
+                world.findHerbivoresWithinRadius(
+                        predator.getX(),
+                        predator.getY(),
+                        senseRadius
+                );
+
+        nearbyHerbivores.removeIf(
+                herbivore ->
+                        !canPredatorEatHerbivore(
+                                predator,
+                                herbivore
+                        )
+        );
+
+        Vector2D desiredDirection =
+                predatorBehavior.chooseDirection(
+                        predator,
+                        nearbyHerbivores,
+                        random
+                );
+
+        double movementDistance =
+                predator.getMovementDistance(TICK_DURATION_SECONDS)
+                        * PREDATOR_SPEED_MULTIPLIER;
+
+        boolean hitWall =
+                world.moveCreature(
+                        predator,
+                        desiredDirection,
+                        movementDistance
+                );
+
+        if (hitWall) {
+            Direction newExplorationDirection =
+                    chooseAlternativeDirection(
+                            predator.getExplorationDirection()
+                    );
+
+            predator.changeExplorationDirection(
+                    newExplorationDirection
+            );
+        }
+
+        double energyCost =
+                energyModel.calculateTickCost(predator.getGenome())
+                        * PREDATOR_ENERGY_COST_MULTIPLIER;
+
+        predator.consumeEnergy(energyCost);
+    }
+
 
     private void reproduceHerbivore(Herbivore herbivore) {
         Genome parentGenome = herbivore.getGenome();
@@ -259,6 +409,33 @@ public class SimulationEngine {
         );
 
         herbivore.startReproductionCooldown();
+    }
+
+    private void reproducePredator(Predator predator) {
+        Genome parentGenome =
+                predator.getGenome();
+
+        Genome childGenome =
+                parentGenome.mutate(
+                        config.getMutationStrength(),
+                        random
+                );
+
+        world.addPredatorEgg(
+                predator.getX(),
+                predator.getY(),
+                childGenome,
+                predator.getGeneration() + 1,
+                Creature.calculateEggHatchTicks(
+                        childGenome
+                )
+        );
+
+        predator.consumeEnergy(
+                energyModel.reproductionEnergyCost()
+        );
+
+        predator.startReproductionCooldown();
     }
 
     private void processHerbivoreEggs(int eggsAtTickStart) {
@@ -286,6 +463,31 @@ public class SimulationEngine {
         }
     }
 
+    private void processPredatorEggs(int eggsAtTickStart) {
+        List<Egg> eggs =
+                world.getPredatorEggs();
+
+        for (int i = eggsAtTickStart - 1; i >= 0; i--) {
+            Egg egg = eggs.get(i);
+
+            egg.advanceTick();
+
+            if (!egg.isReadyToHatch()) {
+                continue;
+            }
+
+            createPredator(
+                    egg.getX(),
+                    egg.getY(),
+                    energyModel.hatchEnergy(),
+                    egg.getGeneration(),
+                    egg.getGenome(),
+                    randomDirection()
+            );
+
+            world.removePredatorEgg(egg);
+        }
+    }
 
     private Direction chooseAlternativeDirection(
             Direction currentDirection
@@ -337,14 +539,41 @@ public class SimulationEngine {
         return herbivore;
     }
 
-    private Genome createInitialHerbivoreGenome() {
+    Predator createPredator(
+            double x,
+            double y,
+            double energy,
+            int generation,
+            Genome genome,
+            Direction explorationDirection
+    ) {
+        Predator predator =
+                new Predator(
+                        nextCreatureId,
+                        x,
+                        y,
+                        energy,
+                        generation,
+                        genome,
+                        explorationDirection
+                );
+
+        world.addPredator(predator);
+
+        nextCreatureId++;
+
+        return predator;
+    }
+
+    private Genome createInitialGenome() {
         Genome mutatedGenome =
                 config.getInitialGenome().mutate(
                         config.getMutationStrength(),
                         random
                 );
 
-        double randomHue = random.nextDouble() * 360.0;
+        double randomHue =
+                random.nextDouble() * 360.0;
 
         return new Genome(
                 mutatedGenome.getSpeed(),
@@ -388,6 +617,74 @@ public class SimulationEngine {
             );
 
             world.addFood(x, y);
+        }
+    }
+
+    private boolean canPredatorEatHerbivore(
+            Predator predator,
+            Herbivore herbivore
+    ) {
+        return predator.getGenome().getSize()
+                >= herbivore.getGenome().getSize() * MIN_PREDATOR_TO_PREY_SIZE_RATIO ;
+    }
+
+    private void resolvePredation() {
+        List<Predator> predators =
+                world.getPredators();
+
+        // Newest predators receive priority.
+        for (int i = predators.size() - 1; i >= 0; i--) {
+            Predator predator = predators.get(i);
+
+            double queryRadius =
+                    predator.getRadius()
+                            + Creature.calculateMaximumRadius();
+
+            List<Herbivore> nearbyHerbivores =
+                    world.findHerbivoresWithinRadius(
+                            predator.getX(),
+                            predator.getY(),
+                            queryRadius
+                    );
+
+            for (Herbivore herbivore : nearbyHerbivores) {
+                if (!canPredatorEatHerbivore(
+                        predator,
+                        herbivore
+                )) {
+                    continue;
+                }
+
+                double dx =
+                        herbivore.getX()
+                                - predator.getX();
+
+                double dy =
+                        herbivore.getY()
+                                - predator.getY();
+
+                double contactRadius =
+                        predator.getRadius()
+                                + herbivore.getRadius();
+
+                double distanceSquared =
+                        dx * dx + dy * dy;
+
+                double contactRadiusSquared =
+                        contactRadius * contactRadius;
+
+                if (distanceSquared > contactRadiusSquared) {
+                    continue;
+                }
+
+                world.removeHerbivore(herbivore);
+
+                predator.addEnergy(
+                        energyModel.predationEnergyGain(
+                                herbivore.getGenome()
+                        )
+                );
+            }
         }
     }
 

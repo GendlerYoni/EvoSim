@@ -130,6 +130,26 @@ public class JavaFxViewer extends Application {
         );
     }
 
+    void drawPredator(
+            double x,
+            double y,
+            double radius,
+            double hue
+    ) {
+        Color color = Color.hsb(
+                hue,
+                HERBIVORE_SATURATION,
+                HERBIVORE_BRIGHTNESS
+        );
+
+        drawSquare(
+                x,
+                y,
+                radius,
+                color
+        );
+    }
+
     private void drawCircle(
             double centerX,
             double centerY,
@@ -146,6 +166,25 @@ public class JavaFxViewer extends Application {
                 centerY - radius,
                 diameter,
                 diameter
+        );
+    }
+
+    private void drawSquare(
+            double centerX,
+            double centerY,
+            double radius,
+            Color color
+    ) {
+        double sideLength =
+                radius * Math.sqrt(2.0);
+
+        graphicsContext.setFill(color);
+
+        graphicsContext.fillRect(
+                centerX - sideLength / 2.0,
+                centerY - sideLength / 2.0,
+                sideLength,
+                sideLength
         );
     }
 

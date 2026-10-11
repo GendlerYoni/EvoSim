@@ -147,4 +147,49 @@ class EnergyModelTest {
                 180.0
         );
     }
+
+    @Test
+    void minimumSizePreyGivesFiftyEnergy() {
+        Genome preyGenome = createGenome(
+                1.0,
+                0.25,
+                1.0
+        );
+
+        assertEquals(
+                50.0,
+                energyModel.predationEnergyGain(preyGenome),
+                DELTA
+        );
+    }
+
+    @Test
+    void baselineSizePreyGivesOneHundredEnergy() {
+        Genome preyGenome = createGenome(
+                1.0,
+                1.0,
+                1.0
+        );
+
+        assertEquals(
+                100.0,
+                energyModel.predationEnergyGain(preyGenome),
+                DELTA
+        );
+    }
+
+    @Test
+    void maximumSizePreyGivesTwoHundredEnergy() {
+        Genome preyGenome = createGenome(
+                1.0,
+                4.0,
+                1.0
+        );
+
+        assertEquals(
+                200.0,
+                energyModel.predationEnergyGain(preyGenome),
+                DELTA
+        );
+    }
 }

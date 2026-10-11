@@ -40,6 +40,37 @@ class SimulationEngineTest {
                 800.0,
                 initialGenome,
                 initialHerbivores,
+                0,
+                initialFood,
+                seed,
+                0.0,
+                0,
+                500
+        );
+    }
+
+
+    private SimulationConfig createConfig(
+            long seed,
+            int initialHerbivores,
+            int initialPredators,
+            int initialFood
+    ) {
+        Genome initialGenome = new Genome(
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                180.0
+        );
+
+        return new SimulationConfig(
+                1000.0,
+                800.0,
+                initialGenome,
+                initialHerbivores,
+                initialPredators,
                 initialFood,
                 seed,
                 0.0,
@@ -88,6 +119,25 @@ class SimulationEngineTest {
             Direction explorationDirection
     ) {
         return engine.createHerbivore(
+                x,
+                y,
+                energy,
+                1,
+                genome,
+                explorationDirection
+        );
+    }
+
+
+    private Predator createPredator(
+            SimulationEngine engine,
+            double x,
+            double y,
+            double energy,
+            Genome genome,
+            Direction explorationDirection
+    ) {
+        return engine.createPredator(
                 x,
                 y,
                 energy,
@@ -1597,6 +1647,7 @@ class SimulationEngineTest {
                         180.0
                 ),
                 initialHerbivores,
+                0,
                 initialFood,
                 seed,
                 mutationStrength,
@@ -1951,6 +2002,7 @@ class SimulationEngineTest {
                         180.0
                 ),
                 initialHerbivores,
+                0,
                 initialFood,
                 seed,
                 mutationStrength,
@@ -2101,5 +2153,1610 @@ class SimulationEngineTest {
                     secondFoods.get(i).getY()
             );
         }
+    }
+
+    // ---------------------------------------------------------------------
+    // M10 - Predators, predation, pursuit, avoidance and predator lifecycle
+    // ---------------------------------------------------------------------
+
+    @Test
+    void createsConfiguredInitialPredators() {
+        SimulationEngine engine =
+                new SimulationEngine(
+                        createConfig(
+                                12345L,
+                                20,
+                                5,
+                                100
+                        )
+                );
+
+        assertEquals(
+                20,
+                engine.getWorld().getHerbivores().size()
+        );
+
+        assertEquals(
+                5,
+                engine.getWorld().getPredators().size()
+        );
+
+        assertEquals(
+                100,
+                engine.getWorld().getFoods().size()
+        );
+    }
+
+    @Test
+    void initialPredatorsUseConfiguredTraitsAndInitialState() {
+        SimulationEngine engine =
+                new SimulationEngine(
+                        createConfig(
+                                12345L,
+                                0,
+                                20,
+                                0
+                        )
+                );
+
+        Genome initialGenome =
+                engine.getConfig().getInitialGenome();
+
+        for (Predator predator :
+                engine.getWorld().getPredators()) {
+
+            Genome predatorGenome =
+                    predator.getGenome();
+
+            assertNotSame(
+                    initialGenome,
+                    predatorGenome
+            );
+
+            assertEquals(
+                    initialGenome.getSpeed(),
+                    predatorGenome.getSpeed(),
+                    1e-9
+            );
+
+            assertEquals(
+                    initialGenome.getSize(),
+                    predatorGenome.getSize(),
+                    1e-9
+            );
+
+            assertEquals(
+                    initialGenome.getSenseRadius(),
+                    predatorGenome.getSenseRadius(),
+                    1e-9
+            );
+
+            assertEquals(
+                    initialGenome.getReproductionThreshold(),
+                    predatorGenome.getReproductionThreshold(),
+                    1e-9
+            );
+
+            assertEquals(
+                    initialGenome.getEggHatchTime(),
+                    predatorGenome.getEggHatchTime(),
+                    1e-9
+            );
+
+            assertTrue(
+                    predatorGenome.getHue() >= 0.0
+                            && predatorGenome.getHue() < 360.0
+            );
+
+            assertEquals(
+                    100.0,
+                    predator.getEnergy(),
+                    1e-9
+            );
+
+            assertEquals(
+                    1,
+                    predator.getGeneration()
+            );
+
+            assertNotNull(
+                    predator.getExplorationDirection()
+            );
+        }
+    }
+
+    @Test
+    void initialPredatorsAreCreatedInsideCreatureMovementBounds() {
+        SimulationEngine engine =
+                new SimulationEngine(
+                        createConfig(
+                                12345L,
+                                0,
+                                100,
+                                0
+                        )
+                );
+
+        double margin =
+                Creature.calculateMaximumRadius();
+
+        double worldWidth =
+                engine.getWorld().getWidth();
+
+        double worldHeight =
+                engine.getWorld().getHeight();
+
+        for (Predator predator :
+                engine.getWorld().getPredators()) {
+
+            assertTrue(
+                    predator.getX() >= margin
+                            && predator.getX()
+                            <= worldWidth - margin
+            );
+
+            assertTrue(
+                    predator.getY() >= margin
+                            && predator.getY()
+                            <= worldHeight - margin
+            );
+        }
+    }
+
+    @Test
+    void creatureIdsRemainUniqueAcrossSpecies() {
+        SimulationEngine engine =
+                new SimulationEngine(
+                        createDefaultConfig()
+                );
+
+        Genome genome =
+                engine.getConfig().getInitialGenome();
+
+        Herbivore first =
+                createHerbivore(
+                        engine,
+                        400.0,
+                        400.0,
+                        100.0,
+                        genome,
+                        Direction.NORTH
+                );
+
+        Predator second =
+                createPredator(
+                        engine,
+                        500.0,
+                        400.0,
+                        100.0,
+                        genome,
+                        Direction.NORTH
+                );
+
+        Herbivore third =
+                createHerbivore(
+                        engine,
+                        600.0,
+                        400.0,
+                        100.0,
+                        genome,
+                        Direction.NORTH
+                );
+
+        assertEquals(1, first.getId());
+        assertEquals(2, second.getId());
+        assertEquals(3, third.getId());
+    }
+
+    @Test
+    void overlappingLegalPreyIsEatenAndAddsEnergy() {
+        SimulationEngine engine =
+                new SimulationEngine(
+                        createDefaultConfig()
+                );
+
+        Genome genome =
+                new Genome(
+                        1.0,
+                        1.0,
+                        1.0,
+                        2.0,
+                        1.0,
+                        180.0
+                );
+
+        Predator predator =
+                createPredator(
+                        engine,
+                        500.0,
+                        400.0,
+                        50.0,
+                        genome,
+                        Direction.NORTH
+                );
+
+        createHerbivore(
+                engine,
+                500.0,
+                400.0,
+                100.0,
+                genome,
+                Direction.NORTH
+        );
+
+        engine.tick();
+
+        assertTrue(
+                engine.getWorld()
+                        .getHerbivores()
+                        .isEmpty()
+        );
+
+        // 50 initial + 100 prey Energy - 1 baseline tick cost.
+        assertEquals(
+                149.0,
+                predator.getEnergy(),
+                1e-9
+        );
+    }
+
+    @Test
+    void predatorAtExactMinimumSizeRatioCanEatHerbivore() {
+        SimulationEngine engine =
+                new SimulationEngine(
+                        createDefaultConfig()
+                );
+
+        Genome predatorGenome =
+                new Genome(
+                        1.0,
+                        0.8,
+                        1.0,
+                        2.0,
+                        1.0,
+                        180.0
+                );
+
+        Genome herbivoreGenome =
+                new Genome(
+                        1.0,
+                        1.0,
+                        1.0,
+                        2.0,
+                        1.0,
+                        180.0
+                );
+
+        createPredator(
+                engine,
+                500.0,
+                400.0,
+                50.0,
+                predatorGenome,
+                Direction.NORTH
+        );
+
+        createHerbivore(
+                engine,
+                500.0,
+                400.0,
+                100.0,
+                herbivoreGenome,
+                Direction.NORTH
+        );
+
+        engine.tick();
+
+        assertTrue(
+                engine.getWorld()
+                        .getHerbivores()
+                        .isEmpty()
+        );
+    }
+
+    @Test
+    void predatorBelowMinimumSizeRatioCannotEatHerbivore() {
+        SimulationEngine engine =
+                new SimulationEngine(
+                        createDefaultConfig()
+                );
+
+        Genome predatorGenome =
+                new Genome(
+                        1.0,
+                        0.79,
+                        1.0,
+                        2.0,
+                        1.0,
+                        180.0
+                );
+
+        Genome herbivoreGenome =
+                new Genome(
+                        1.0,
+                        1.0,
+                        1.0,
+                        2.0,
+                        1.0,
+                        180.0
+                );
+
+        createPredator(
+                engine,
+                500.0,
+                400.0,
+                50.0,
+                predatorGenome,
+                Direction.NORTH
+        );
+
+        Herbivore herbivore =
+                createHerbivore(
+                        engine,
+                        500.0,
+                        400.0,
+                        100.0,
+                        herbivoreGenome,
+                        Direction.NORTH
+                );
+
+        engine.tick();
+
+        assertEquals(
+                1,
+                engine.getWorld()
+                        .getHerbivores()
+                        .size()
+        );
+
+        assertSame(
+                herbivore,
+                engine.getWorld()
+                        .getHerbivores()
+                        .get(0)
+        );
+    }
+
+    @Test
+    void predatorEatsPreyExactlyOnContactBoundary() {
+        SimulationEngine engine =
+                new SimulationEngine(
+                        createDefaultConfig()
+                );
+
+        Genome genome =
+                new Genome(
+                        1.0,
+                        1.0,
+                        1.0,
+                        2.0,
+                        1.0,
+                        180.0
+                );
+
+        Predator predator =
+                createPredator(
+                        engine,
+                        500.0,
+                        400.0,
+                        50.0,
+                        genome,
+                        Direction.NORTH
+                );
+
+        double contactDistance =
+                predator.getRadius()
+                        + Creature.calculateRadius(genome);
+
+        createHerbivore(
+                engine,
+                500.0 + contactDistance,
+                400.0,
+                100.0,
+                genome,
+                Direction.NORTH
+        );
+
+        engine.tick();
+
+        assertTrue(
+                engine.getWorld()
+                        .getHerbivores()
+                        .isEmpty()
+        );
+    }
+
+    @Test
+    void predatorDoesNotEatPreyOutsideContactBoundaryInCurrentTick() {
+        SimulationEngine engine =
+                new SimulationEngine(
+                        createDefaultConfig()
+                );
+
+        Genome genome =
+                new Genome(
+                        1.0,
+                        1.0,
+                        1.0,
+                        2.0,
+                        1.0,
+                        180.0
+                );
+
+        Predator predator =
+                createPredator(
+                        engine,
+                        500.0,
+                        400.0,
+                        50.0,
+                        genome,
+                        Direction.NORTH
+                );
+
+        double contactDistance =
+                predator.getRadius()
+                        + Creature.calculateRadius(genome);
+
+        createHerbivore(
+                engine,
+                500.0 + contactDistance + 0.1,
+                400.0,
+                100.0,
+                genome,
+                Direction.NORTH
+        );
+
+        engine.tick();
+
+        assertEquals(
+                1,
+                engine.getWorld()
+                        .getHerbivores()
+                        .size()
+        );
+    }
+
+    @Test
+    void capturedHerbivoreDoesNotEatFoodBeforePredation() {
+        SimulationEngine engine =
+                new SimulationEngine(
+                        createDefaultConfig()
+                );
+
+        Genome genome =
+                new Genome(
+                        1.0,
+                        1.0,
+                        1.0,
+                        2.0,
+                        1.0,
+                        180.0
+                );
+
+        createPredator(
+                engine,
+                500.0,
+                400.0,
+                50.0,
+                genome,
+                Direction.NORTH
+        );
+
+        createHerbivore(
+                engine,
+                500.0,
+                400.0,
+                100.0,
+                genome,
+                Direction.NORTH
+        );
+
+        Food food =
+                engine.getWorld()
+                        .addFood(
+                                500.0,
+                                400.0
+                        );
+
+        engine.tick();
+
+        assertTrue(
+                engine.getWorld()
+                        .getHerbivores()
+                        .isEmpty()
+        );
+
+        assertEquals(
+                1,
+                engine.getWorld()
+                        .getFoods()
+                        .size()
+        );
+
+        assertSame(
+                food,
+                engine.getWorld()
+                        .getFoods()
+                        .get(0)
+        );
+    }
+
+    @Test
+    void predatorCanEatMultipleHerbivoresInSameTick() {
+        SimulationEngine engine =
+                new SimulationEngine(
+                        createDefaultConfig()
+                );
+
+        Genome genome =
+                new Genome(
+                        1.0,
+                        1.0,
+                        1.0,
+                        2.0,
+                        1.0,
+                        180.0
+                );
+
+        Predator predator =
+                createPredator(
+                        engine,
+                        500.0,
+                        400.0,
+                        50.0,
+                        genome,
+                        Direction.NORTH
+                );
+
+        createHerbivore(
+                engine,
+                500.0,
+                400.0,
+                100.0,
+                genome,
+                Direction.NORTH
+        );
+
+        createHerbivore(
+                engine,
+                501.0,
+                400.0,
+                100.0,
+                genome,
+                Direction.NORTH
+        );
+
+        engine.tick();
+
+        assertTrue(
+                engine.getWorld()
+                        .getHerbivores()
+                        .isEmpty()
+        );
+
+        assertEquals(
+                249.0,
+                predator.getEnergy(),
+                1e-9
+        );
+    }
+
+    @Test
+    void newerPredatorGetsPriorityWhenBothCanEatSameHerbivore() {
+        SimulationEngine engine =
+                new SimulationEngine(
+                        createDefaultConfig()
+                );
+
+        Genome genome =
+                new Genome(
+                        1.0,
+                        1.0,
+                        1.0,
+                        2.0,
+                        1.0,
+                        180.0
+                );
+
+        Predator olderPredator =
+                createPredator(
+                        engine,
+                        500.0,
+                        400.0,
+                        50.0,
+                        genome,
+                        Direction.NORTH
+                );
+
+        Predator newerPredator =
+                createPredator(
+                        engine,
+                        500.0,
+                        400.0,
+                        50.0,
+                        genome,
+                        Direction.NORTH
+                );
+
+        createHerbivore(
+                engine,
+                500.0,
+                400.0,
+                100.0,
+                genome,
+                Direction.NORTH
+        );
+
+        engine.tick();
+
+        assertTrue(
+                engine.getWorld()
+                        .getHerbivores()
+                        .isEmpty()
+        );
+
+        assertEquals(
+                49.0,
+                olderPredator.getEnergy(),
+                1e-9
+        );
+
+        assertEquals(
+                149.0,
+                newerPredator.getEnergy(),
+                1e-9
+        );
+    }
+
+    @Test
+    void herbivoreAvoidsLegalPredator() {
+        SimulationEngine engine =
+                new SimulationEngine(
+                        createDefaultConfig()
+                );
+
+        Genome genome =
+                new Genome(
+                        1.0,
+                        1.0,
+                        1.0,
+                        2.0,
+                        1.0,
+                        180.0
+                );
+
+        Herbivore herbivore =
+                createHerbivore(
+                        engine,
+                        500.0,
+                        400.0,
+                        100.0,
+                        genome,
+                        Direction.NORTH
+                );
+
+        createPredator(
+                engine,
+                520.0,
+                400.0,
+                50.0,
+                genome,
+                Direction.NORTH
+        );
+
+        engine.tick();
+
+        assertEquals(
+                498.75,
+                herbivore.getX(),
+                1e-9
+        );
+
+        assertEquals(
+                400.0,
+                herbivore.getY(),
+                1e-9
+        );
+    }
+
+    @Test
+    void herbivoreIgnoresPredatorThatCannotEatIt() {
+        SimulationEngine control =
+                new SimulationEngine(
+                        createDefaultConfig()
+                );
+
+        SimulationEngine withSmallPredator =
+                new SimulationEngine(
+                        createDefaultConfig()
+                );
+
+        Genome herbivoreGenome =
+                new Genome(
+                        1.0,
+                        1.0,
+                        1.0,
+                        2.0,
+                        1.0,
+                        180.0
+                );
+
+        Genome smallPredatorGenome =
+                new Genome(
+                        1.0,
+                        0.79,
+                        1.0,
+                        2.0,
+                        1.0,
+                        180.0
+                );
+
+        Herbivore controlHerbivore =
+                createHerbivore(
+                        control,
+                        500.0,
+                        400.0,
+                        100.0,
+                        herbivoreGenome,
+                        Direction.NORTH
+                );
+
+        Herbivore testedHerbivore =
+                createHerbivore(
+                        withSmallPredator,
+                        500.0,
+                        400.0,
+                        100.0,
+                        herbivoreGenome,
+                        Direction.NORTH
+                );
+
+        createPredator(
+                withSmallPredator,
+                520.0,
+                400.0,
+                50.0,
+                smallPredatorGenome,
+                Direction.NORTH
+        );
+
+        control.tick();
+        withSmallPredator.tick();
+
+        assertEquals(
+                controlHerbivore.getX(),
+                testedHerbivore.getX(),
+                1e-9
+        );
+
+        assertEquals(
+                controlHerbivore.getY(),
+                testedHerbivore.getY(),
+                1e-9
+        );
+    }
+
+    @Test
+    void predationOccursOnFollowingTickAfterMovementCreatesOverlap() {
+        SimulationEngine engine =
+                new SimulationEngine(
+                        createDefaultConfig()
+                );
+
+        Genome predatorGenome =
+                new Genome(
+                        4.0,
+                        1.0,
+                        1.0,
+                        2.0,
+                        1.0,
+                        180.0
+                );
+
+        Genome herbivoreGenome =
+                new Genome(
+                        0.25,
+                        1.0,
+                        1.0,
+                        2.0,
+                        1.0,
+                        180.0
+                );
+
+        createPredator(
+                engine,
+                500.0,
+                400.0,
+                50.0,
+                predatorGenome,
+                Direction.EAST
+        );
+
+        Herbivore herbivore =
+                createHerbivore(
+                        engine,
+                        515.0,
+                        400.0,
+                        100.0,
+                        herbivoreGenome,
+                        Direction.EAST
+                );
+
+        engine.tick();
+
+        // They overlap only after both have moved, so the herbivore
+        // survives until the next tick's resolvePredation().
+        assertTrue(
+                engine.getWorld()
+                        .getHerbivores()
+                        .contains(herbivore)
+        );
+
+        engine.tick();
+
+        assertFalse(
+                engine.getWorld()
+                        .getHerbivores()
+                        .contains(herbivore)
+        );
+    }
+
+    @Test
+    void predatorReachingZeroEnergyDiesOnFollowingTickWithoutPrey() {
+        SimulationEngine engine =
+                new SimulationEngine(
+                        createDefaultConfig()
+                );
+
+        Genome genome =
+                new Genome(
+                        1.0,
+                        1.0,
+                        1.0,
+                        2.0,
+                        1.0,
+                        180.0
+                );
+
+        Predator predator =
+                createPredator(
+                        engine,
+                        500.0,
+                        400.0,
+                        1.0,
+                        genome,
+                        Direction.NORTH
+                );
+
+        engine.tick();
+
+        assertEquals(
+                0.0,
+                predator.getEnergy(),
+                1e-9
+        );
+
+        assertTrue(
+                engine.getWorld()
+                        .getPredators()
+                        .contains(predator)
+        );
+
+        engine.tick();
+
+        assertFalse(
+                engine.getWorld()
+                        .getPredators()
+                        .contains(predator)
+        );
+    }
+
+    @Test
+    void predatorAtZeroEnergyCanBeRescuedByOverlappingPrey() {
+        SimulationEngine engine =
+                new SimulationEngine(
+                        createDefaultConfig()
+                );
+
+        Genome genome =
+                new Genome(
+                        1.0,
+                        1.0,
+                        1.0,
+                        2.0,
+                        1.0,
+                        180.0
+                );
+
+        Predator predator =
+                createPredator(
+                        engine,
+                        500.0,
+                        400.0,
+                        1.0,
+                        genome,
+                        Direction.NORTH
+                );
+
+        engine.tick();
+
+        assertEquals(
+                0.0,
+                predator.getEnergy(),
+                1e-9
+        );
+
+        createHerbivore(
+                engine,
+                predator.getX(),
+                predator.getY(),
+                100.0,
+                genome,
+                Direction.NORTH
+        );
+
+        engine.tick();
+
+        assertTrue(
+                engine.getWorld()
+                        .getPredators()
+                        .contains(predator)
+        );
+
+        assertEquals(
+                99.0,
+                predator.getEnergy(),
+                1e-9
+        );
+    }
+
+    @Test
+    void predatorDoesNotEatHerbivoreEggs() {
+        SimulationEngine engine =
+                new SimulationEngine(
+                        createDefaultConfig()
+                );
+
+        Genome genome =
+                new Genome(
+                        1.0,
+                        1.0,
+                        1.0,
+                        2.0,
+                        1.0,
+                        180.0
+                );
+
+        createPredator(
+                engine,
+                500.0,
+                400.0,
+                50.0,
+                genome,
+                Direction.NORTH
+        );
+
+        Egg egg =
+                engine.getWorld()
+                        .addHerbivoreEgg(
+                                500.0,
+                                400.0,
+                                genome,
+                                2,
+                                2
+                        );
+
+        engine.tick();
+
+        assertEquals(
+                1,
+                engine.getWorld()
+                        .getHerbivoreEggs()
+                        .size()
+        );
+
+        assertSame(
+                egg,
+                engine.getWorld()
+                        .getHerbivoreEggs()
+                        .get(0)
+        );
+
+        assertEquals(
+                1,
+                egg.getRemainingHatchTicks()
+        );
+    }
+
+    @Test
+    void predatorAtThresholdLaysEggAndPaysReproductionCost() {
+        SimulationEngine engine =
+                new SimulationEngine(
+                        createDefaultConfig()
+                );
+
+        Genome genome =
+                new Genome(
+                        1.0,
+                        1.0,
+                        1.0,
+                        1.0,
+                        1.0,
+                        180.0
+                );
+
+        Predator parent =
+                createPredator(
+                        engine,
+                        500.0,
+                        400.0,
+                        200.0,
+                        genome,
+                        Direction.NORTH
+                );
+
+        double layingX =
+                parent.getX();
+
+        double layingY =
+                parent.getY();
+
+        engine.tick();
+
+        assertEquals(
+                1,
+                engine.getWorld()
+                        .getPredatorEggs()
+                        .size()
+        );
+
+        Egg egg =
+                engine.getWorld()
+                        .getPredatorEggs()
+                        .get(0);
+
+        assertEquals(
+                layingX,
+                egg.getX(),
+                1e-9
+        );
+
+        assertEquals(
+                layingY,
+                egg.getY(),
+                1e-9
+        );
+
+        assertEquals(
+                2,
+                egg.getGeneration()
+        );
+
+        assertEquals(
+                50,
+                egg.getRemainingHatchTicks()
+        );
+
+        assertEquals(
+                119.0,
+                parent.getEnergy(),
+                1e-9
+        );
+
+        assertEquals(
+                50,
+                parent.getReproductionCooldownTicksRemaining()
+        );
+    }
+
+    @Test
+    void predatorBelowThresholdDoesNotReproduce() {
+        SimulationEngine engine =
+                new SimulationEngine(
+                        createDefaultConfig()
+                );
+
+        Genome genome =
+                new Genome(
+                        1.0,
+                        1.0,
+                        1.0,
+                        1.0,
+                        1.0,
+                        180.0
+                );
+
+        createPredator(
+                engine,
+                500.0,
+                400.0,
+                199.0,
+                genome,
+                Direction.NORTH
+        );
+
+        engine.tick();
+
+        assertTrue(
+                engine.getWorld()
+                        .getPredatorEggs()
+                        .isEmpty()
+        );
+    }
+
+    @Test
+    void predatorReproductionCreatesIndependentChildGenomeWithSameValues() {
+        SimulationEngine engine =
+                new SimulationEngine(
+                        createDefaultConfig()
+                );
+
+        Genome parentGenome =
+                new Genome(
+                        1.0,
+                        1.0,
+                        1.0,
+                        1.0,
+                        1.0,
+                        180.0
+                );
+
+        createPredator(
+                engine,
+                500.0,
+                400.0,
+                200.0,
+                parentGenome,
+                Direction.NORTH
+        );
+
+        engine.tick();
+
+        Genome childGenome =
+                engine.getWorld()
+                        .getPredatorEggs()
+                        .get(0)
+                        .getGenome();
+
+        assertNotSame(
+                parentGenome,
+                childGenome
+        );
+
+        assertEquals(
+                parentGenome.getSpeed(),
+                childGenome.getSpeed(),
+                1e-9
+        );
+
+        assertEquals(
+                parentGenome.getSize(),
+                childGenome.getSize(),
+                1e-9
+        );
+
+        assertEquals(
+                parentGenome.getSenseRadius(),
+                childGenome.getSenseRadius(),
+                1e-9
+        );
+
+        assertEquals(
+                parentGenome.getReproductionThreshold(),
+                childGenome.getReproductionThreshold(),
+                1e-9
+        );
+
+        assertEquals(
+                parentGenome.getEggHatchTime(),
+                childGenome.getEggHatchTime(),
+                1e-9
+        );
+
+        assertEquals(
+                parentGenome.getHue(),
+                childGenome.getHue(),
+                1e-9
+        );
+    }
+
+    @Test
+    void predatorEggHatchesAfterExactCountdown() {
+        SimulationEngine engine =
+                new SimulationEngine(
+                        createDefaultConfig()
+                );
+
+        Genome genome =
+                engine.getConfig()
+                        .getInitialGenome();
+
+        Egg egg =
+                engine.getWorld()
+                        .addPredatorEgg(
+                                500.0,
+                                400.0,
+                                genome,
+                                2,
+                                2
+                        );
+
+        engine.tick();
+
+        assertEquals(
+                1,
+                egg.getRemainingHatchTicks()
+        );
+
+        assertEquals(
+                1,
+                engine.getWorld()
+                        .getPredatorEggs()
+                        .size()
+        );
+
+        assertTrue(
+                engine.getWorld()
+                        .getPredators()
+                        .isEmpty()
+        );
+
+        engine.tick();
+
+        assertTrue(
+                engine.getWorld()
+                        .getPredatorEggs()
+                        .isEmpty()
+        );
+
+        assertEquals(
+                1,
+                engine.getWorld()
+                        .getPredators()
+                        .size()
+        );
+
+        Predator child =
+                engine.getWorld()
+                        .getPredators()
+                        .get(0);
+
+        assertEquals(
+                500.0,
+                child.getX(),
+                1e-9
+        );
+
+        assertEquals(
+                400.0,
+                child.getY(),
+                1e-9
+        );
+
+        assertEquals(
+                80.0,
+                child.getEnergy(),
+                1e-9
+        );
+
+        assertEquals(
+                2,
+                child.getGeneration()
+        );
+
+        assertSame(
+                genome,
+                child.getGenome()
+        );
+
+        assertNotNull(
+                child.getExplorationDirection()
+        );
+    }
+
+    @Test
+    void hatchedPredatorDoesNotActUntilFollowingTick() {
+        SimulationEngine engine =
+                new SimulationEngine(
+                        createDefaultConfig()
+                );
+
+        engine.getWorld()
+                .addPredatorEgg(
+                        500.0,
+                        400.0,
+                        engine.getConfig()
+                                .getInitialGenome(),
+                        2,
+                        1
+                );
+
+        engine.tick();
+
+        Predator child =
+                engine.getWorld()
+                        .getPredators()
+                        .get(0);
+
+        assertEquals(
+                80.0,
+                child.getEnergy(),
+                1e-9
+        );
+
+        assertEquals(
+                500.0,
+                child.getX(),
+                1e-9
+        );
+
+        assertEquals(
+                400.0,
+                child.getY(),
+                1e-9
+        );
+
+        engine.tick();
+
+        assertEquals(
+                79.0,
+                child.getEnergy(),
+                1e-9
+        );
+    }
+
+    @Test
+    void predatorReproductionUsesMutatedChildGenome() {
+        long seed = 24680L;
+        double mutationStrength = 0.05;
+
+        SimulationEngine engine =
+                new SimulationEngine(
+                        createConfig(
+                                seed,
+                                0,
+                                0,
+                                mutationStrength
+                        )
+                );
+
+        Genome parentGenome =
+                new Genome(
+                        1.0,
+                        1.0,
+                        1.0,
+                        1.0,
+                        1.0,
+                        180.0
+                );
+
+        createPredator(
+                engine,
+                500.0,
+                400.0,
+                200.0,
+                parentGenome,
+                Direction.EAST
+        );
+
+        Random expectedRandom =
+                new Random(seed);
+
+        Genome expectedChildGenome =
+                parentGenome.mutate(
+                        mutationStrength,
+                        expectedRandom
+                );
+
+        engine.tick();
+
+        Genome actualChildGenome =
+                engine.getWorld()
+                        .getPredatorEggs()
+                        .get(0)
+                        .getGenome();
+
+        assertEquals(
+                expectedChildGenome.getSpeed(),
+                actualChildGenome.getSpeed(),
+                1e-9
+        );
+
+        assertEquals(
+                expectedChildGenome.getSize(),
+                actualChildGenome.getSize(),
+                1e-9
+        );
+
+        assertEquals(
+                expectedChildGenome.getSenseRadius(),
+                actualChildGenome.getSenseRadius(),
+                1e-9
+        );
+
+        assertEquals(
+                expectedChildGenome.getReproductionThreshold(),
+                actualChildGenome.getReproductionThreshold(),
+                1e-9
+        );
+
+        assertEquals(
+                expectedChildGenome.getEggHatchTime(),
+                actualChildGenome.getEggHatchTime(),
+                1e-9
+        );
+
+        assertEquals(
+                expectedChildGenome.getHue(),
+                actualChildGenome.getHue(),
+                1e-9
+        );
+    }
+
+    @Test
+    void sameSeedProducesSameInitialPredators() {
+        SimulationEngine first =
+                new SimulationEngine(
+                        createConfig(
+                                98765L,
+                                0,
+                                10,
+                                0
+                        )
+                );
+
+        SimulationEngine second =
+                new SimulationEngine(
+                        createConfig(
+                                98765L,
+                                0,
+                                10,
+                                0
+                        )
+                );
+
+        List<Predator> firstPredators =
+                first.getWorld()
+                        .getPredators();
+
+        List<Predator> secondPredators =
+                second.getWorld()
+                        .getPredators();
+
+        assertEquals(
+                firstPredators.size(),
+                secondPredators.size()
+        );
+
+        for (int i = 0; i < firstPredators.size(); i++) {
+            Predator firstPredator =
+                    firstPredators.get(i);
+
+            Predator secondPredator =
+                    secondPredators.get(i);
+
+            assertEquals(
+                    firstPredator.getId(),
+                    secondPredator.getId()
+            );
+
+            assertEquals(
+                    firstPredator.getX(),
+                    secondPredator.getX(),
+                    1e-9
+            );
+
+            assertEquals(
+                    firstPredator.getY(),
+                    secondPredator.getY(),
+                    1e-9
+            );
+
+            assertEquals(
+                    firstPredator.getExplorationDirection(),
+                    secondPredator.getExplorationDirection()
+            );
+
+            assertEquals(
+                    firstPredator.getGenome().getSpeed(),
+                    secondPredator.getGenome().getSpeed()
+            );
+
+            assertEquals(
+                    firstPredator.getGenome().getSize(),
+                    secondPredator.getGenome().getSize()
+            );
+
+            assertEquals(
+                    firstPredator.getGenome().getSenseRadius(),
+                    secondPredator.getGenome().getSenseRadius()
+            );
+
+            assertEquals(
+                    firstPredator.getGenome().getReproductionThreshold(),
+                    secondPredator.getGenome().getReproductionThreshold()
+            );
+
+            assertEquals(
+                    firstPredator.getGenome().getEggHatchTime(),
+                    secondPredator.getGenome().getEggHatchTime()
+            );
+
+            assertEquals(
+                    firstPredator.getGenome().getHue(),
+                    secondPredator.getGenome().getHue()
+            );
+        }
+    }
+
+    @Test
+    void sameSeedProducesSamePredatorMovementSequence() {
+        SimulationEngine first =
+                new SimulationEngine(
+                        createConfig(98765L)
+                );
+
+        SimulationEngine second =
+                new SimulationEngine(
+                        createConfig(98765L)
+                );
+
+        Genome genome =
+                new Genome(
+                        1.0,
+                        1.0,
+                        1.0,
+                        2.0,
+                        1.0,
+                        180.0
+                );
+
+        Predator firstPredator =
+                createPredator(
+                        first,
+                        500.0,
+                        400.0,
+                        100.0,
+                        genome,
+                        Direction.NORTH
+                );
+
+        Predator secondPredator =
+                createPredator(
+                        second,
+                        500.0,
+                        400.0,
+                        100.0,
+                        genome,
+                        Direction.NORTH
+                );
+
+        for (int i = 0; i < 20; i++) {
+            first.tick();
+            second.tick();
+        }
+
+        assertEquals(
+                firstPredator.getX(),
+                secondPredator.getX(),
+                1e-9
+        );
+
+        assertEquals(
+                firstPredator.getY(),
+                secondPredator.getY(),
+                1e-9
+        );
+
+        assertEquals(
+                firstPredator.getEnergy(),
+                secondPredator.getEnergy(),
+                1e-9
+        );
+
+        assertEquals(
+                firstPredator.getExplorationDirection(),
+                secondPredator.getExplorationDirection()
+        );
     }
 }

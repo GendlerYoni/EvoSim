@@ -3,6 +3,7 @@ package io.github.gendleryoni.evosim;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.ToDoubleFunction;
 
 public class World {
 
@@ -11,7 +12,9 @@ public class World {
 
     private final List<Food> foods = new ArrayList<>();
     private final List<Herbivore> herbivores = new ArrayList<>();
+    private final List<Predator> predators = new ArrayList<>();
     private final List<Egg> herbivoreEggs = new ArrayList<>();
+    private final List<Egg> predatorEggs = new ArrayList<>();
 
     public World(double width, double height) {
         if (!Double.isFinite(width)
@@ -45,30 +48,44 @@ public class World {
             double y,
             double radius
     ) {
-        if (!Double.isFinite(x) || !Double.isFinite(y)) {
-            throw new IllegalArgumentException(
-                    "Query position must be finite"
-            );
-        }
+        return findEntitiesWithinRadius(
+                foods,
+                x,
+                y,
+                radius,
+                Food::getX,
+                Food::getY
+        );
+    }
 
-        if (!Double.isFinite(radius) || radius < 0) {
-            throw new IllegalArgumentException(
-                    "Radius must be non-negative and finite"
-            );
-        }
+    public List<Herbivore> findHerbivoresWithinRadius(
+            double x,
+            double y,
+            double radius
+    ) {
+        return findEntitiesWithinRadius(
+                herbivores,
+                x,
+                y,
+                radius,
+                Herbivore::getX,
+                Herbivore::getY
+        );
+    }
 
-        List<Food> nearbyFoods = new ArrayList<>();
-
-        for (Food food : foods) {
-            double dx = food.getX() - x;
-            double dy = food.getY() - y;
-
-            if (dx * dx + dy * dy <= radius * radius) {
-                nearbyFoods.add(food);
-            }
-        }
-
-        return nearbyFoods;
+    public List<Predator> findPredatorsWithinRadius(
+            double x,
+            double y,
+            double radius
+    ) {
+        return findEntitiesWithinRadius(
+                predators,
+                x,
+                y,
+                radius,
+                Predator::getX,
+                Predator::getY
+        );
     }
 
     public Food addFood(double x, double y) {
@@ -104,37 +121,19 @@ public class World {
     }
 
     public void addHerbivore(Herbivore herbivore) {
-        if (herbivore == null) {
-            throw new IllegalArgumentException(
-                    "Herbivore cannot be null"
-            );
-        }
-
-        if (!isCircleInBounds(
-                herbivore.getX(),
-                herbivore.getY(),
-                Creature.calculateMaximumRadius()
-        )) {
-            throw new IllegalArgumentException(
-                    "Herbivore must be inside creature movement bounds"
-            );
-        }
-
-        herbivores.add(herbivore);
+        addCreature(herbivores, herbivore);
     }
 
     public void removeHerbivore(Herbivore herbivore) {
-        if (herbivore == null) {
-            throw new IllegalArgumentException(
-                    "Herbivore cannot be null"
-            );
-        }
+        removeCreature(herbivores, herbivore);
+    }
 
-        if (!herbivores.remove(herbivore)) {
-            throw new IllegalStateException(
-                    "Herbivore does not exist in world"
-            );
-        }
+    public void addPredator(Predator predator) {
+        addCreature(predators, predator);
+    }
+
+    public void removePredator(Predator predator) {
+        removeCreature(predators, predator);
     }
 
     public Egg addHerbivoreEgg(
@@ -144,45 +143,47 @@ public class World {
             int generation,
             int remainingHatchTicks
     ) {
-        Egg egg = new Egg(
+        return addEgg(
+                herbivoreEggs,
                 x,
                 y,
                 genome,
                 generation,
                 remainingHatchTicks
         );
+    }
 
-        if (!isCircleInBounds(
-                egg.getX(),
-                egg.getY(),
-                Creature.calculateMaximumRadius()
-        )) {
-            throw new IllegalArgumentException(
-                    "Herbivore egg must be fully inside world bounds"
-            );
-        }
-
-        herbivoreEggs.add(egg);
-
-        return egg;
+    public Egg addPredatorEgg(
+            double x,
+            double y,
+            Genome genome,
+            int generation,
+            int remainingHatchTicks
+    ) {
+        return addEgg(
+                predatorEggs,
+                x,
+                y,
+                genome,
+                generation,
+                remainingHatchTicks
+        );
     }
 
     public void removeHerbivoreEgg(Egg egg) {
-        if (egg == null) {
-            throw new IllegalArgumentException(
-                    "Herbivore egg cannot be null"
-            );
-        }
+        removeEgg(herbivoreEggs, egg);
+    }
 
-        if (!herbivoreEggs.remove(egg)) {
-            throw new IllegalStateException(
-                    "Herbivore egg does not exist in world"
-            );
-        }
+    public void removePredatorEgg(Egg egg) {
+        removeEgg(predatorEggs, egg);
     }
 
     public List<Herbivore> getHerbivores() {
         return Collections.unmodifiableList(herbivores);
+    }
+
+    public List<Predator> getPredators() {
+        return Collections.unmodifiableList(predators);
     }
 
     public List<Food> getFoods() {
@@ -193,27 +194,8 @@ public class World {
         return Collections.unmodifiableList(herbivoreEggs);
     }
 
-    private boolean isCircleInBounds(
-            double x,
-            double y,
-            double radius
-    ) {
-        if (!Double.isFinite(x) || !Double.isFinite(y)) {
-            throw new IllegalArgumentException(
-                    "Circle position must be finite"
-            );
-        }
-
-        if (!Double.isFinite(radius) || radius < 0) {
-            throw new IllegalArgumentException(
-                    "Circle radius must be non-negative and finite"
-            );
-        }
-
-        return x >= radius
-                && x <= width - radius
-                && y >= radius
-                && y <= height - radius;
+    public List<Egg> getPredatorEggs() {
+        return Collections.unmodifiableList(predatorEggs);
     }
 
     boolean moveCreature(
@@ -239,13 +221,15 @@ public class World {
             );
         }
 
-        if (!herbivores.contains(creature)) {
+        if (!herbivores.contains(creature)
+                && !predators.contains(creature)) {
             throw new IllegalStateException(
                     "Creature does not exist in world"
             );
         }
 
-        Vector2D normalizedDirection = direction.normalized();
+        Vector2D normalizedDirection =
+                direction.normalized();
 
         double proposedX =
                 creature.getX()
@@ -282,5 +266,155 @@ public class World {
         creature.moveTo(finalX, finalY);
 
         return hitWall;
+    }
+
+    private <T extends Creature> void addCreature(
+            List<T> creatures,
+            T creature
+    ) {
+        if (creature == null) {
+            throw new IllegalArgumentException(
+                    "Creature cannot be null"
+            );
+        }
+
+        if (!isCircleInBounds(
+                creature.getX(),
+                creature.getY(),
+                Creature.calculateMaximumRadius()
+        )) {
+            throw new IllegalArgumentException(
+                    "Creature must be inside creature movement bounds"
+            );
+        }
+
+        creatures.add(creature);
+    }
+
+    private <T extends Creature> void removeCreature(
+            List<T> creatures,
+            T creature
+    ) {
+        if (creature == null) {
+            throw new IllegalArgumentException(
+                    "Creature cannot be null"
+            );
+        }
+
+        if (!creatures.remove(creature)) {
+            throw new IllegalStateException(
+                    "Creature does not exist in world"
+            );
+        }
+    }
+
+    private Egg addEgg(
+            List<Egg> eggs,
+            double x,
+            double y,
+            Genome genome,
+            int generation,
+            int remainingHatchTicks
+    ) {
+        Egg egg = new Egg(
+                x,
+                y,
+                genome,
+                generation,
+                remainingHatchTicks
+        );
+
+        if (!isCircleInBounds(
+                egg.getX(),
+                egg.getY(),
+                Creature.calculateMaximumRadius()
+        )) {
+            throw new IllegalArgumentException(
+                    "Egg must be fully inside world bounds"
+            );
+        }
+
+        eggs.add(egg);
+
+        return egg;
+    }
+
+    private void removeEgg(
+            List<Egg> eggs,
+            Egg egg
+    ) {
+        if (egg == null) {
+            throw new IllegalArgumentException(
+                    "Egg cannot be null"
+            );
+        }
+
+        if (!eggs.remove(egg)) {
+            throw new IllegalStateException(
+                    "Egg does not exist in world"
+            );
+        }
+    }
+
+    private boolean isCircleInBounds(
+            double x,
+            double y,
+            double radius
+    ) {
+        if (!Double.isFinite(x) || !Double.isFinite(y)) {
+            throw new IllegalArgumentException(
+                    "Circle position must be finite"
+            );
+        }
+
+        if (!Double.isFinite(radius) || radius < 0) {
+            throw new IllegalArgumentException(
+                    "Circle radius must be non-negative and finite"
+            );
+        }
+
+        return x >= radius
+                && x <= width - radius
+                && y >= radius
+                && y <= height - radius;
+    }
+
+    private <T> List<T> findEntitiesWithinRadius(
+            List<T> entities,
+            double x,
+            double y,
+            double radius,
+            ToDoubleFunction<T> xExtractor,
+            ToDoubleFunction<T> yExtractor
+    ) {
+        if (!Double.isFinite(x) || !Double.isFinite(y)) {
+            throw new IllegalArgumentException(
+                    "Query position must be finite"
+            );
+        }
+
+        if (!Double.isFinite(radius) || radius < 0) {
+            throw new IllegalArgumentException(
+                    "Radius must be non-negative and finite"
+            );
+        }
+
+        List<T> nearbyEntities = new ArrayList<>();
+
+        double radiusSquared = radius * radius;
+
+        for (T entity : entities) {
+            double dx =
+                    xExtractor.applyAsDouble(entity) - x;
+
+            double dy =
+                    yExtractor.applyAsDouble(entity) - y;
+
+            if (dx * dx + dy * dy <= radiusSquared) {
+                nearbyEntities.add(entity);
+            }
+        }
+
+        return nearbyEntities;
     }
 }

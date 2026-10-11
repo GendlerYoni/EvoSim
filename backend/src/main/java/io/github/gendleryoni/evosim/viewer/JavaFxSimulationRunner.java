@@ -1,29 +1,33 @@
 package io.github.gendleryoni.evosim.viewer;
 
+import io.github.gendleryoni.evosim.Egg;
 import io.github.gendleryoni.evosim.Food;
 import io.github.gendleryoni.evosim.Genome;
 import io.github.gendleryoni.evosim.Herbivore;
+import io.github.gendleryoni.evosim.Predator;
 import io.github.gendleryoni.evosim.SimulationConfig;
 import io.github.gendleryoni.evosim.SimulationEngine;
-import io.github.gendleryoni.evosim.Egg;
 
 class JavaFxSimulationRunner {
 
     private static final double WORLD_WIDTH = 1000.0;
     private static final double WORLD_HEIGHT = 800.0;
 
-    private static final int INITIAL_HERBIVORES = 20;
-    private static final int INITIAL_FOOD = 100;
+    private static final int INITIAL_HERBIVORES = 100;
+    private static final int INITIAL_PREDATORS = 200;
+    private static final int INITIAL_FOOD = 200;
 
     private static final long SEED = 12345L;
 
     private static final double MUTATION_STRENGTH = 0.05;
 
-    private static final int FOOD_SPAWN_MAX = 2;
-    private static final int FOOD_CAP = 500;
+    private static final int FOOD_SPAWN_MAX = 20;
+    private static final int FOOD_CAP = 5000;
 
     private static final long NANOS_PER_SECOND =
             1_000_000_000L;
+
+    private static final double SIMULATION_SPEED = 2.0;
 
     private final SimulationEngine engine;
     private final long tickIntervalNanos;
@@ -46,12 +50,12 @@ class JavaFxSimulationRunner {
                 WORLD_HEIGHT,
                 initialGenome,
                 INITIAL_HERBIVORES,
+                INITIAL_PREDATORS,
                 INITIAL_FOOD,
                 SEED,
                 MUTATION_STRENGTH,
                 FOOD_SPAWN_MAX,
                 FOOD_CAP
-
         );
 
         this.engine = new SimulationEngine(config);
@@ -84,7 +88,8 @@ class JavaFxSimulationRunner {
 
         previousTimeNanos = now;
 
-        accumulatorNanos += elapsedNanos;
+        accumulatorNanos +=
+                (long) (elapsedNanos * SIMULATION_SPEED);
 
         boolean tickOccurred = false;
 
@@ -105,8 +110,10 @@ class JavaFxSimulationRunner {
         viewer.clear();
 
         drawFoods(viewer);
-        drawEggs(viewer);
+        drawHerbivoreEggs(viewer);
+        drawPredatorEggs(viewer);
         drawHerbivores(viewer);
+        drawPredators(viewer);
     }
 
     private void drawFoods(JavaFxViewer viewer) {
@@ -119,8 +126,18 @@ class JavaFxSimulationRunner {
         }
     }
 
-    private void drawEggs(JavaFxViewer viewer) {
+    private void drawHerbivoreEggs(JavaFxViewer viewer) {
         for (Egg egg : engine.getWorld().getHerbivoreEggs()) {
+            viewer.drawEgg(
+                    egg.getX(),
+                    egg.getY(),
+                    egg.getRadius()
+            );
+        }
+    }
+
+    private void drawPredatorEggs(JavaFxViewer viewer) {
+        for (Egg egg : engine.getWorld().getPredatorEggs()) {
             viewer.drawEgg(
                     egg.getX(),
                     egg.getY(),
@@ -138,6 +155,19 @@ class JavaFxSimulationRunner {
                     herbivore.getY(),
                     herbivore.getRadius(),
                     herbivore.getGenome().getHue()
+            );
+        }
+    }
+
+    private void drawPredators(JavaFxViewer viewer) {
+        for (Predator predator :
+                engine.getWorld().getPredators()) {
+
+            viewer.drawPredator(
+                    predator.getX(),
+                    predator.getY(),
+                    predator.getRadius(),
+                    predator.getGenome().getHue()
             );
         }
     }
