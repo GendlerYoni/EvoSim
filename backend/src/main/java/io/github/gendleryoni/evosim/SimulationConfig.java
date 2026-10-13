@@ -1,54 +1,46 @@
+
 package io.github.gendleryoni.evosim;
 
 public class SimulationConfig {
 
-    private final double worldWidth;
-    private final double worldHeight;
+    private static final int MAX_INITIAL_HERBIVORES = 1000;
+    private static final int MAX_INITIAL_PREDATORS = 1000;
+    private static final int MAX_FOOD_SPAWN_PER_TICK = 100;
+
     private final Genome initialGenome;
     private final int initialHerbivores;
     private final int initialPredators;
     private final int initialFood;
     private final long seed;
-    private final double mutationStrength;
     private final int foodSpawnMaxPerTick;
-    private final int foodCap;
 
     public SimulationConfig(
-            double worldWidth,
-            double worldHeight,
             Genome initialGenome,
             int initialHerbivores,
             int initialPredators,
             int initialFood,
             long seed,
-            double mutationStrength,
-            int foodSpawnMaxPerTick,
-            int foodCap
-    ){
-        if (!Double.isFinite(worldWidth)
-                || !Double.isFinite(worldHeight)
-                || worldWidth <= 0
-                || worldHeight <= 0) {
-            throw new IllegalArgumentException(
-                    "World dimensions must be positive and finite"
-            );
-        }
-
+            int foodSpawnMaxPerTick
+    ) {
         if (initialGenome == null) {
             throw new IllegalArgumentException(
                     "Initial genome cannot be null"
             );
         }
 
-        if (initialHerbivores < 0) {
+        if (initialHerbivores < 0
+                || initialHerbivores > MAX_INITIAL_HERBIVORES) {
             throw new IllegalArgumentException(
-                    "Initial herbivore count cannot be negative"
+                    "Initial herbivore count must be between 0 and "
+                            + MAX_INITIAL_HERBIVORES
             );
         }
 
-        if (initialPredators < 0) {
+        if (initialPredators < 0
+                || initialPredators > MAX_INITIAL_PREDATORS) {
             throw new IllegalArgumentException(
-                    "Initial predator count cannot be negative"
+                    "Initial predator count must be between 0 and "
+                            + MAX_INITIAL_PREDATORS
             );
         }
 
@@ -58,49 +50,20 @@ public class SimulationConfig {
             );
         }
 
-        if (!Double.isFinite(mutationStrength)
-                || mutationStrength < 0) {
+        if (foodSpawnMaxPerTick < 0
+                || foodSpawnMaxPerTick > MAX_FOOD_SPAWN_PER_TICK) {
             throw new IllegalArgumentException(
-                    "Mutation strength must be non-negative and finite"
+                    "Food spawn max per tick must be between 0 and "
+                            + MAX_FOOD_SPAWN_PER_TICK
             );
         }
 
-        if (foodSpawnMaxPerTick < 0) {
-            throw new IllegalArgumentException(
-                    "Food spawn max per tick cannot be negative"
-            );
-        }
-
-        if (foodCap < 0) {
-            throw new IllegalArgumentException(
-                    "Food cap cannot be negative"
-            );
-        }
-
-        if (initialFood > foodCap) {
-            throw new IllegalArgumentException(
-                    "Initial food count cannot exceed food cap"
-            );
-        }
-
-        this.worldWidth = worldWidth;
-        this.worldHeight = worldHeight;
         this.initialGenome = initialGenome;
         this.initialHerbivores = initialHerbivores;
         this.initialPredators = initialPredators;
         this.initialFood = initialFood;
         this.seed = seed;
-        this.mutationStrength = mutationStrength;
         this.foodSpawnMaxPerTick = foodSpawnMaxPerTick;
-        this.foodCap = foodCap;
-    }
-
-    public double getWorldWidth() {
-        return worldWidth;
-    }
-
-    public double getWorldHeight() {
-        return worldHeight;
     }
 
     public Genome getInitialGenome() {
@@ -123,15 +86,7 @@ public class SimulationConfig {
         return seed;
     }
 
-    public double getMutationStrength() {
-        return mutationStrength;
-    }
-
     public int getFoodSpawnMaxPerTick() {
         return foodSpawnMaxPerTick;
-    }
-
-    public int getFoodCap() {
-        return foodCap;
     }
 }

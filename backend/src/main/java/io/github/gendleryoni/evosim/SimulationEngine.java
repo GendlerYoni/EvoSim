@@ -1,3 +1,4 @@
+
 package io.github.gendleryoni.evosim;
 
 import java.util.List;
@@ -5,12 +6,18 @@ import java.util.Random;
 
 public class SimulationEngine {
 
+    private static final double WORLD_WIDTH = 1000.0;
+    private static final double WORLD_HEIGHT = 800.0;
+    private static final double MUTATION_STRENGTH = 0.05;
+    private static final int FOOD_CAP = 5000;
+    private static final int MAX_TOTAL_POPULATION = 10_000;
+
     // Initial V1 timestep; subject to tuning as simulation behavior is tested.
     private static final double TICK_DURATION_SECONDS = 1.0 / 20.0;
     private static final double MIN_PREDATOR_TO_PREY_SIZE_RATIO = 0.8;
 
     private static final double PREDATOR_SPEED_MULTIPLIER = 1.2;
-    private static final double PREDATOR_ENERGY_COST_MULTIPLIER = 1;
+    private static final double PREDATOR_ENERGY_COST_MULTIPLIER = 1.0;
 
     private final SimulationConfig config;
     private final World world;
@@ -29,12 +36,15 @@ public class SimulationEngine {
             );
         }
 
+        if (config.getInitialFood() > FOOD_CAP) {
+            throw new IllegalArgumentException(
+                    "Initial food count cannot exceed " + FOOD_CAP
+            );
+        }
+
         this.config = config;
 
-        this.world = new World(
-                config.getWorldWidth(),
-                config.getWorldHeight()
-        );
+        this.world = new World(WORLD_WIDTH, WORLD_HEIGHT);
 
         this.random = new Random(config.getSeed());
         this.herbivoreBehavior = new HerbivoreBehavior();
@@ -386,13 +396,26 @@ public class SimulationEngine {
         predator.consumeEnergy(energyCost);
     }
 
+    private boolean hasPopulationCapacity() {
+        int totalPopulation =
+                world.getHerbivores().size()
+                        + world.getPredators().size()
+                        + world.getHerbivoreEggs().size()
+                        + world.getPredatorEggs().size();
+
+        return totalPopulation < MAX_TOTAL_POPULATION;
+    }
 
     private void reproduceHerbivore(Herbivore herbivore) {
+        if (!hasPopulationCapacity()) {
+            return;
+        }
+
         Genome parentGenome = herbivore.getGenome();
 
         Genome childGenome =
                 parentGenome.mutate(
-                        config.getMutationStrength(),
+                        MUTATION_STRENGTH,
                         random
                 );
 
@@ -412,12 +435,16 @@ public class SimulationEngine {
     }
 
     private void reproducePredator(Predator predator) {
+        if (!hasPopulationCapacity()) {
+            return;
+        }
+
         Genome parentGenome =
                 predator.getGenome();
 
         Genome childGenome =
                 parentGenome.mutate(
-                        config.getMutationStrength(),
+                        MUTATION_STRENGTH,
                         random
                 );
 
@@ -450,6 +477,8 @@ public class SimulationEngine {
                 continue;
             }
 
+            world.removeHerbivoreEgg(egg);
+
             createHerbivore(
                     egg.getX(),
                     egg.getY(),
@@ -458,8 +487,6 @@ public class SimulationEngine {
                     egg.getGenome(),
                     randomDirection()
             );
-
-            world.removeHerbivoreEgg(egg);
         }
     }
 
@@ -476,6 +503,8 @@ public class SimulationEngine {
                 continue;
             }
 
+            world.removePredatorEgg(egg);
+
             createPredator(
                     egg.getX(),
                     egg.getY(),
@@ -484,8 +513,6 @@ public class SimulationEngine {
                     egg.getGenome(),
                     randomDirection()
             );
-
-            world.removePredatorEgg(egg);
         }
     }
 
@@ -568,7 +595,7 @@ public class SimulationEngine {
     private Genome createInitialGenome() {
         Genome mutatedGenome =
                 config.getInitialGenome().mutate(
-                        config.getMutationStrength(),
+                        MUTATION_STRENGTH,
                         random
                 );
 
@@ -587,7 +614,7 @@ public class SimulationEngine {
 
     private void spawnFoodForTick() {
         int remainingCapacity =
-                config.getFoodCap() - world.getFoods().size();
+                FOOD_CAP - world.getFoods().size();
 
         if (remainingCapacity <= 0
                 || config.getFoodSpawnMaxPerTick() == 0) {
@@ -625,7 +652,8 @@ public class SimulationEngine {
             Herbivore herbivore
     ) {
         return predator.getGenome().getSize()
-                >= herbivore.getGenome().getSize() * MIN_PREDATOR_TO_PREY_SIZE_RATIO ;
+                >= herbivore.getGenome().getSize()
+                * MIN_PREDATOR_TO_PREY_SIZE_RATIO;
     }
 
     private void resolvePredation() {

@@ -1,3 +1,4 @@
+
 package io.github.gendleryoni.evosim.viewer;
 
 import io.github.gendleryoni.evosim.Egg;
@@ -8,21 +9,15 @@ import io.github.gendleryoni.evosim.Predator;
 import io.github.gendleryoni.evosim.SimulationConfig;
 import io.github.gendleryoni.evosim.SimulationEngine;
 
+import java.util.concurrent.ThreadLocalRandom;
+
 class JavaFxSimulationRunner {
 
-    private static final double WORLD_WIDTH = 1000.0;
-    private static final double WORLD_HEIGHT = 800.0;
-
-    private static final int INITIAL_HERBIVORES = 100;
-    private static final int INITIAL_PREDATORS = 200;
+    private static final int INITIAL_HERBIVORES = 1000;
+    private static final int INITIAL_PREDATORS = 100;
     private static final int INITIAL_FOOD = 200;
 
-    private static final long SEED = 12345L;
-
-    private static final double MUTATION_STRENGTH = 0.05;
-
-    private static final int FOOD_SPAWN_MAX = 20;
-    private static final int FOOD_CAP = 5000;
+    private static final int FOOD_SPAWN_MAX = 4;
 
     private static final long NANOS_PER_SECOND =
             1_000_000_000L;
@@ -45,17 +40,15 @@ class JavaFxSimulationRunner {
                 180.0
         );
 
+        long seed = ThreadLocalRandom.current().nextLong();
+
         SimulationConfig config = new SimulationConfig(
-                WORLD_WIDTH,
-                WORLD_HEIGHT,
                 initialGenome,
                 INITIAL_HERBIVORES,
                 INITIAL_PREDATORS,
                 INITIAL_FOOD,
-                SEED,
-                MUTATION_STRENGTH,
-                FOOD_SPAWN_MAX,
-                FOOD_CAP
+                seed,
+                FOOD_SPAWN_MAX
         );
 
         this.engine = new SimulationEngine(config);
