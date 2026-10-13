@@ -1,3 +1,4 @@
+
 package io.github.gendleryoni.evosim;
 
 import org.junit.jupiter.api.Test;
@@ -17,119 +18,103 @@ class SimulationConfigTest {
         );
     }
 
+    private SimulationConfig createConfig(
+            int herbivores,
+            int predators,
+            int food,
+            int foodSpawnMaxPerTick
+    ) {
+        return new SimulationConfig(
+                createGenome(),
+                herbivores,
+                predators,
+                food,
+                12345L,
+                foodSpawnMaxPerTick
+        );
+    }
+
     @Test
     void storesConfiguredValues() {
         Genome genome = createGenome();
 
-        SimulationConfig config =
-                new SimulationConfig(
-                        1000.0,
-                        800.0,
-                        genome,
-                        20,
-                        5,
-                        100,
-                        12345L,
-                        0.05,
-                        10,
-                        500
-                );
-
-        assertEquals(
-                1000.0,
-                config.getWorldWidth()
-        );
-
-        assertEquals(
-                800.0,
-                config.getWorldHeight()
-        );
-
-        assertSame(
+        SimulationConfig config = new SimulationConfig(
                 genome,
-                config.getInitialGenome()
-        );
-
-        assertEquals(
                 20,
-                config.getInitialHerbivores()
-        );
-
-        assertEquals(
                 5,
-                config.getInitialPredators()
-        );
-
-        assertEquals(
                 100,
-                config.getInitialFood()
-        );
-
-        assertEquals(
                 12345L,
-                config.getSeed()
+                10
         );
 
-        assertEquals(
-                0.05,
-                config.getMutationStrength()
-        );
-
-        assertEquals(
-                10,
-                config.getFoodSpawnMaxPerTick()
-        );
-
-        assertEquals(
-                500,
-                config.getFoodCap()
+        assertAll(
+                () -> assertSame(
+                        genome,
+                        config.getInitialGenome()
+                ),
+                () -> assertEquals(
+                        20,
+                        config.getInitialHerbivores()
+                ),
+                () -> assertEquals(
+                        5,
+                        config.getInitialPredators()
+                ),
+                () -> assertEquals(
+                        100,
+                        config.getInitialFood()
+                ),
+                () -> assertEquals(
+                        12345L,
+                        config.getSeed()
+                ),
+                () -> assertEquals(
+                        10,
+                        config.getFoodSpawnMaxPerTick()
+                )
         );
     }
 
     @Test
     void allowsZeroInitialEntitiesAndFoodSpawning() {
-        SimulationConfig config =
-                new SimulationConfig(
-                        1000.0,
-                        800.0,
-                        createGenome(),
+        SimulationConfig config = createConfig(
+                0, 0, 0, 0
+        );
+
+        assertAll(
+                () -> assertEquals(
                         0,
+                        config.getInitialHerbivores()
+                ),
+                () -> assertEquals(
                         0,
+                        config.getInitialPredators()
+                ),
+                () -> assertEquals(
                         0,
-                        12345L,
-                        0.0,
+                        config.getInitialFood()
+                ),
+                () -> assertEquals(
                         0,
-                        0
-                );
+                        config.getFoodSpawnMaxPerTick()
+                )
+        );
+    }
+
+    @Test
+    void allowsMaximumInitialPopulations() {
+        SimulationConfig config = createConfig(
+                1000, 1000, 0, 0
+        );
 
         assertEquals(
-                0,
+                1000,
                 config.getInitialHerbivores()
         );
 
         assertEquals(
-                0,
+                1000,
                 config.getInitialPredators()
-        );
-
-        assertEquals(
-                0,
-                config.getInitialFood()
-        );
-
-        assertEquals(
-                0.0,
-                config.getMutationStrength()
-        );
-
-        assertEquals(
-                0,
-                config.getFoodSpawnMaxPerTick()
-        );
-
-        assertEquals(
-                0,
-                config.getFoodCap()
         );
     }
 
@@ -137,18 +122,15 @@ class SimulationConfigTest {
     void rejectsNegativeInitialHerbivoreCount() {
         assertThrows(
                 IllegalArgumentException.class,
-                () -> new SimulationConfig(
-                        1000.0,
-                        800.0,
-                        createGenome(),
-                        -1,
-                        0,
-                        0,
-                        12345L,
-                        0.0,
-                        0,
-                        500
-                )
+                () -> createConfig(-1, 0, 0, 0)
+        );
+    }
+
+    @Test
+    void rejectsInitialHerbivoresAboveMaximum() {
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> createConfig(1001, 0, 0, 0)
         );
     }
 
@@ -156,18 +138,15 @@ class SimulationConfigTest {
     void rejectsNegativeInitialPredatorCount() {
         assertThrows(
                 IllegalArgumentException.class,
-                () -> new SimulationConfig(
-                        1000.0,
-                        800.0,
-                        createGenome(),
-                        0,
-                        -1,
-                        0,
-                        12345L,
-                        0.0,
-                        0,
-                        500
-                )
+                () -> createConfig(0, -1, 0, 0)
+        );
+    }
+
+    @Test
+    void rejectsInitialPredatorsAboveMaximum() {
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> createConfig(0, 1001, 0, 0)
         );
     }
 
@@ -175,120 +154,7 @@ class SimulationConfigTest {
     void rejectsNegativeInitialFoodCount() {
         assertThrows(
                 IllegalArgumentException.class,
-                () -> new SimulationConfig(
-                        1000.0,
-                        800.0,
-                        createGenome(),
-                        0,
-                        0,
-                        -1,
-                        12345L,
-                        0.0,
-                        0,
-                        500
-                )
-        );
-    }
-
-    @Test
-    void rejectsNonPositiveWorldDimensions() {
-        assertThrows(
-                IllegalArgumentException.class,
-                () -> new SimulationConfig(
-                        0.0,
-                        800.0,
-                        createGenome(),
-                        0,
-                        0,
-                        0,
-                        12345L,
-                        0.0,
-                        0,
-                        500
-                )
-        );
-
-        assertThrows(
-                IllegalArgumentException.class,
-                () -> new SimulationConfig(
-                        1000.0,
-                        0.0,
-                        createGenome(),
-                        0,
-                        0,
-                        0,
-                        12345L,
-                        0.0,
-                        0,
-                        500
-                )
-        );
-
-        assertThrows(
-                IllegalArgumentException.class,
-                () -> new SimulationConfig(
-                        -1.0,
-                        800.0,
-                        createGenome(),
-                        0,
-                        0,
-                        0,
-                        12345L,
-                        0.0,
-                        0,
-                        500
-                )
-        );
-
-        assertThrows(
-                IllegalArgumentException.class,
-                () -> new SimulationConfig(
-                        1000.0,
-                        -1.0,
-                        createGenome(),
-                        0,
-                        0,
-                        0,
-                        12345L,
-                        0.0,
-                        0,
-                        500
-                )
-        );
-    }
-
-    @Test
-    void rejectsNonFiniteWorldDimensions() {
-        assertThrows(
-                IllegalArgumentException.class,
-                () -> new SimulationConfig(
-                        Double.NaN,
-                        800.0,
-                        createGenome(),
-                        0,
-                        0,
-                        0,
-                        12345L,
-                        0.0,
-                        0,
-                        500
-                )
-        );
-
-        assertThrows(
-                IllegalArgumentException.class,
-                () -> new SimulationConfig(
-                        1000.0,
-                        Double.POSITIVE_INFINITY,
-                        createGenome(),
-                        0,
-                        0,
-                        0,
-                        12345L,
-                        0.0,
-                        0,
-                        500
-                )
+                () -> createConfig(0, 0, -1, 0)
         );
     }
 
@@ -297,71 +163,25 @@ class SimulationConfigTest {
         assertThrows(
                 IllegalArgumentException.class,
                 () -> new SimulationConfig(
-                        1000.0,
-                        800.0,
                         null,
                         0,
                         0,
                         0,
                         12345L,
-                        0.0,
-                        0,
-                        500
+                        0
                 )
         );
     }
 
     @Test
-    void rejectsNegativeMutationStrength() {
-        assertThrows(
-                IllegalArgumentException.class,
-                () -> new SimulationConfig(
-                        1000.0,
-                        800.0,
-                        createGenome(),
-                        0,
-                        0,
-                        0,
-                        12345L,
-                        -0.01,
-                        0,
-                        500
-                )
-        );
-    }
-
-    @Test
-    void rejectsNonFiniteMutationStrength() {
-        assertThrows(
-                IllegalArgumentException.class,
-                () -> new SimulationConfig(
-                        1000.0,
-                        800.0,
-                        createGenome(),
-                        0,
-                        0,
-                        0,
-                        12345L,
-                        Double.NaN,
-                        0,
-                        500
-                )
+    void allowsMaximumFoodSpawnPerTick() {
+        SimulationConfig config = createConfig(
+                0, 0, 0, 100
         );
 
-        assertThrows(
-                IllegalArgumentException.class,
-                () -> new SimulationConfig(
-                        1000.0,
-                        800.0,
-                        createGenome(),
-                        0,
-                        0,
-                        0,
-                        12345L,
-                        Double.POSITIVE_INFINITY,
-                        0,
-                        500
-                )
+        assertEquals(
+                100,
+                config.getFoodSpawnMaxPerTick()
         );
     }
 
@@ -369,74 +189,46 @@ class SimulationConfigTest {
     void rejectsNegativeFoodSpawnMaxPerTick() {
         assertThrows(
                 IllegalArgumentException.class,
-                () -> new SimulationConfig(
-                        1000.0,
-                        800.0,
-                        createGenome(),
-                        0,
-                        0,
-                        0,
-                        12345L,
-                        0.0,
-                        -1,
-                        500
-                )
+                () -> createConfig(0, 0, 0, -1)
         );
     }
 
     @Test
-    void rejectsNegativeFoodCap() {
+    void rejectsFoodSpawnMaxPerTickAboveMaximum() {
         assertThrows(
                 IllegalArgumentException.class,
-                () -> new SimulationConfig(
-                        1000.0,
-                        800.0,
-                        createGenome(),
-                        0,
-                        0,
-                        0,
-                        12345L,
-                        0.0,
-                        0,
-                        -1
-                )
+                () -> createConfig(0, 0, 0, 101)
         );
     }
 
     @Test
-    void rejectsInitialFoodAboveFoodCap() {
-        assertThrows(
-                IllegalArgumentException.class,
-                () -> new SimulationConfig(
-                        1000.0,
-                        800.0,
-                        createGenome(),
-                        0,
-                        0,
-                        101,
-                        12345L,
-                        0.0,
-                        10,
-                        100
-                )
+    void allowsAnyLongSeed() {
+        SimulationConfig minSeedConfig = new SimulationConfig(
+                createGenome(),
+                0,
+                0,
+                0,
+                Long.MIN_VALUE,
+                0
         );
-    }
 
-    @Test
-    void allowsInitialFoodEqualToFoodCap() {
-        assertDoesNotThrow(
-                () -> new SimulationConfig(
-                        1000.0,
-                        800.0,
-                        createGenome(),
-                        0,
-                        0,
-                        100,
-                        12345L,
-                        0.0,
-                        10,
-                        100
-                )
+        SimulationConfig maxSeedConfig = new SimulationConfig(
+                createGenome(),
+                0,
+                0,
+                0,
+                Long.MAX_VALUE,
+                0
+        );
+
+        assertEquals(
+                Long.MIN_VALUE,
+                minSeedConfig.getSeed()
+        );
+
+        assertEquals(
+                Long.MAX_VALUE,
+                maxSeedConfig.getSeed()
         );
     }
 }
