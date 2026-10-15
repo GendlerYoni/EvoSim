@@ -548,36 +548,57 @@ class SimulationEngineTest {
         assertTrue(engine.getWorld().getFoods().isEmpty());
     }
 
+
     @Test
     void reproductionCooldownPreventsNewEggUntilFiftyTicksPass() {
-        SimulationEngine engine = new SimulationEngine(createDefaultConfig());
+        SimulationEngine engine =
+                new SimulationEngine(createDefaultConfig());
 
-        // Long hatch time prevents the first Egg from hatching
-        // while this test checks only reproduction cooldown.
+        // Long hatch time prevents eggs from hatching
+        // while testing reproduction cooldown.
         Genome genome = createGenome(1.0, 4.0);
 
-        Herbivore herbivore = createHerbivore(engine, 500.0, 400.0, 1000.0, genome, Direction.NORTH);
+        Herbivore herbivore = createHerbivore(
+                engine,
+                500.0,
+                400.0,
+                1000.0,
+                genome,
+                Direction.NORTH
+        );
 
         engine.tick();
 
-        assertEquals(1, engine.getWorld().getHerbivoreEggs().size());
-
-        assertEquals(50, herbivore.getReproductionCooldownTicksRemaining());
+        assertEquals(1, countTotalEggs(engine));
+        assertEquals(
+                50,
+                herbivore.getReproductionCooldownTicksRemaining()
+        );
 
         for (int i = 0; i < 49; i++) {
             engine.tick();
         }
 
-        assertEquals(1, engine.getWorld().getHerbivoreEggs().size());
-
-        assertEquals(1, herbivore.getReproductionCooldownTicksRemaining());
+        assertEquals(1, countTotalEggs(engine));
+        assertEquals(
+                1,
+                herbivore.getReproductionCooldownTicksRemaining()
+        );
 
         engine.tick();
 
-        assertEquals(2, engine.getWorld().getHerbivoreEggs().size());
-
-        assertEquals(50, herbivore.getReproductionCooldownTicksRemaining());
+        assertEquals(2, countTotalEggs(engine));
+        assertEquals(
+                50,
+                herbivore.getReproductionCooldownTicksRemaining()
+        );
     }
+
+    private int countTotalEggs(SimulationEngine engine) {
+        return engine.getWorld().getHerbivoreEggs().size()
+                + engine.getWorld().getPredatorEggs().size();
+    }
+
 
     @Test
     void eggHatchesAfterExactCountdown() {
