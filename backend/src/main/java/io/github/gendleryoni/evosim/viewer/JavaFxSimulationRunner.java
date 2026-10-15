@@ -7,7 +7,7 @@ import io.github.gendleryoni.evosim.Genome;
 import io.github.gendleryoni.evosim.Herbivore;
 import io.github.gendleryoni.evosim.Predator;
 import io.github.gendleryoni.evosim.SimulationConfig;
-import io.github.gendleryoni.evosim.SimulationEngine;
+import io.github.gendleryoni.evosim.SimulationSession;
 
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -16,19 +16,9 @@ class JavaFxSimulationRunner {
     private static final int INITIAL_HERBIVORES = 1000;
     private static final int INITIAL_PREDATORS = 100;
     private static final int INITIAL_FOOD = 200;
+    private static final int FOOD_SPAWN_MAX = 7;
 
-    private static final int FOOD_SPAWN_MAX = 4;
-
-    private static final long NANOS_PER_SECOND =
-            1_000_000_000L;
-
-    private static final double SIMULATION_SPEED = 2.0;
-
-    private final SimulationEngine engine;
-    private final long tickIntervalNanos;
-
-    private long previousTimeNanos = -1L;
-    private long accumulatorNanos = 0L;
+    private final SimulationSession session;
 
     JavaFxSimulationRunner() {
         Genome initialGenome = new Genome(
@@ -51,50 +41,19 @@ class JavaFxSimulationRunner {
                 FOOD_SPAWN_MAX
         );
 
-        this.engine = new SimulationEngine(config);
-
-        this.tickIntervalNanos = Math.round(
-                engine.getTickDurationSeconds()
-                        * NANOS_PER_SECOND
-        );
+        this.session = new SimulationSession(config);
     }
 
     double getWorldWidth() {
-        return engine.getWorld().getWidth();
+        return session.getWorldWidth();
     }
 
     double getWorldHeight() {
-        return engine.getWorld().getHeight();
+        return session.getWorldHeight();
     }
 
-    void update(
-            long now,
-            JavaFxViewer viewer
-    ) {
-        if (previousTimeNanos < 0L) {
-            previousTimeNanos = now;
-            return;
-        }
-
-        long elapsedNanos =
-                now - previousTimeNanos;
-
-        previousTimeNanos = now;
-
-        accumulatorNanos +=
-                (long) (elapsedNanos * SIMULATION_SPEED);
-
-        boolean tickOccurred = false;
-
-        while (accumulatorNanos >= tickIntervalNanos) {
-            engine.tick();
-
-            accumulatorNanos -= tickIntervalNanos;
-
-            tickOccurred = true;
-        }
-
-        if (tickOccurred) {
+    void update(long now, JavaFxViewer viewer) {
+        if (session.update(now)) {
             drawCurrentState(viewer);
         }
     }
@@ -110,7 +69,7 @@ class JavaFxSimulationRunner {
     }
 
     private void drawFoods(JavaFxViewer viewer) {
-        for (Food food : engine.getWorld().getFoods()) {
+        for (Food food : session.getFoods()) {
             viewer.drawFood(
                     food.getX(),
                     food.getY(),
@@ -120,7 +79,7 @@ class JavaFxSimulationRunner {
     }
 
     private void drawHerbivoreEggs(JavaFxViewer viewer) {
-        for (Egg egg : engine.getWorld().getHerbivoreEggs()) {
+        for (Egg egg : session.getHerbivoreEggs()) {
             viewer.drawEgg(
                     egg.getX(),
                     egg.getY(),
@@ -130,7 +89,7 @@ class JavaFxSimulationRunner {
     }
 
     private void drawPredatorEggs(JavaFxViewer viewer) {
-        for (Egg egg : engine.getWorld().getPredatorEggs()) {
+        for (Egg egg : session.getPredatorEggs()) {
             viewer.drawEgg(
                     egg.getX(),
                     egg.getY(),
@@ -140,9 +99,7 @@ class JavaFxSimulationRunner {
     }
 
     private void drawHerbivores(JavaFxViewer viewer) {
-        for (Herbivore herbivore :
-                engine.getWorld().getHerbivores()) {
-
+        for (Herbivore herbivore : session.getHerbivores()) {
             viewer.drawHerbivore(
                     herbivore.getX(),
                     herbivore.getY(),
@@ -153,9 +110,7 @@ class JavaFxSimulationRunner {
     }
 
     private void drawPredators(JavaFxViewer viewer) {
-        for (Predator predator :
-                engine.getWorld().getPredators()) {
-
+        for (Predator predator : session.getPredators()) {
             viewer.drawPredator(
                     predator.getX(),
                     predator.getY(),
@@ -163,5 +118,29 @@ class JavaFxSimulationRunner {
                     predator.getGenome().getHue()
             );
         }
+    }
+
+    void pause(long nowNanos) {
+        session.pause(nowNanos);
+    }
+
+    void resume() {
+        session.resume();
+    }
+
+    void reset() {
+        session.reset();
+    }
+
+    void changeSpeed(int delta, long nowNanos) {
+        session.changeSpeed(delta, nowNanos);
+    }
+
+    SimulationSession.State getState() {
+        return session.getState();
+    }
+
+    int getSpeedMultiplier() {
+        return session.getSpeedMultiplier();
     }
 }
