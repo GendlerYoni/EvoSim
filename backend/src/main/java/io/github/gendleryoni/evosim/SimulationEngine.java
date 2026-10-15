@@ -19,6 +19,8 @@ public class SimulationEngine {
     private static final double PREDATOR_SPEED_MULTIPLIER = 1.2;
     private static final double PREDATOR_ENERGY_COST_MULTIPLIER = 1.0;
 
+    private static final double EGG_SPECIES_MUTATION_CHANCE = 0.05;
+
     private final SimulationConfig config;
     private final World world;
     private final Random random;
@@ -411,58 +413,40 @@ public class SimulationEngine {
             return;
         }
 
-        Genome parentGenome = herbivore.getGenome();
-
-        Genome childGenome =
-                parentGenome.mutate(
-                        MUTATION_STRENGTH,
-                        random
-                );
-
-        world.addHerbivoreEgg(
-                herbivore.getX(),
-                herbivore.getY(),
-                childGenome,
-                herbivore.getGeneration() + 1,
-                Creature.calculateEggHatchTicks(childGenome)
+        Genome childGenome = herbivore.getGenome().mutate(
+                MUTATION_STRENGTH,
+                random
         );
+
+        int childGeneration = herbivore.getGeneration() + 1;
+        int hatchTicks = Creature.calculateEggHatchTicks(childGenome);
+
+        boolean speciesMutation =
+                random.nextDouble() < EGG_SPECIES_MUTATION_CHANCE;
+
+        if (speciesMutation) {
+            world.addPredatorEgg(
+                    herbivore.getX(),
+                    herbivore.getY(),
+                    childGenome,
+                    childGeneration,
+                    hatchTicks
+            );
+        } else {
+            world.addHerbivoreEgg(
+                    herbivore.getX(),
+                    herbivore.getY(),
+                    childGenome,
+                    childGeneration,
+                    hatchTicks
+            );
+        }
 
         herbivore.consumeEnergy(
                 energyModel.reproductionEnergyCost()
         );
 
         herbivore.startReproductionCooldown();
-    }
-
-    private void reproducePredator(Predator predator) {
-        if (!hasPopulationCapacity()) {
-            return;
-        }
-
-        Genome parentGenome =
-                predator.getGenome();
-
-        Genome childGenome =
-                parentGenome.mutate(
-                        MUTATION_STRENGTH,
-                        random
-                );
-
-        world.addPredatorEgg(
-                predator.getX(),
-                predator.getY(),
-                childGenome,
-                predator.getGeneration() + 1,
-                Creature.calculateEggHatchTicks(
-                        childGenome
-                )
-        );
-
-        predator.consumeEnergy(
-                energyModel.reproductionEnergyCost()
-        );
-
-        predator.startReproductionCooldown();
     }
 
     private void processHerbivoreEggs(int eggsAtTickStart) {
@@ -488,6 +472,47 @@ public class SimulationEngine {
                     randomDirection()
             );
         }
+    }
+
+    private void reproducePredator(Predator predator) {
+        if (!hasPopulationCapacity()) {
+            return;
+        }
+
+        Genome childGenome = predator.getGenome().mutate(
+                MUTATION_STRENGTH,
+                random
+        );
+
+        int childGeneration = predator.getGeneration() + 1;
+        int hatchTicks = Creature.calculateEggHatchTicks(childGenome);
+
+        boolean speciesMutation =
+                random.nextDouble() < EGG_SPECIES_MUTATION_CHANCE;
+
+        if (speciesMutation) {
+            world.addHerbivoreEgg(
+                    predator.getX(),
+                    predator.getY(),
+                    childGenome,
+                    childGeneration,
+                    hatchTicks
+            );
+        } else {
+            world.addPredatorEgg(
+                    predator.getX(),
+                    predator.getY(),
+                    childGenome,
+                    childGeneration,
+                    hatchTicks
+            );
+        }
+
+        predator.consumeEnergy(
+                energyModel.reproductionEnergyCost()
+        );
+
+        predator.startReproductionCooldown();
     }
 
     private void processPredatorEggs(int eggsAtTickStart) {
