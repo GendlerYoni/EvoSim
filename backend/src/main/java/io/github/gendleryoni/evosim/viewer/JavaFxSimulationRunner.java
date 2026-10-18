@@ -8,6 +8,7 @@ import io.github.gendleryoni.evosim.Herbivore;
 import io.github.gendleryoni.evosim.Predator;
 import io.github.gendleryoni.evosim.SimulationConfig;
 import io.github.gendleryoni.evosim.SimulationSession;
+import io.github.gendleryoni.evosim.statistics.StatisticsBatch;
 
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -16,7 +17,7 @@ class JavaFxSimulationRunner {
     private static final int INITIAL_HERBIVORES = 1000;
     private static final int INITIAL_PREDATORS = 100;
     private static final int INITIAL_FOOD = 200;
-    private static final int FOOD_SPAWN_MAX = 7;
+    private static final int FOOD_SPAWN_MAX = 5;
 
     private final SimulationSession session;
 
@@ -66,6 +67,18 @@ class JavaFxSimulationRunner {
         drawPredatorEggs(viewer);
         drawHerbivores(viewer);
         drawPredators(viewer);
+    }
+
+    StatisticsBatch getStatisticsFromIndex(int fromIndex) {
+        return session.getStatisticsFromIndex(fromIndex);
+    }
+
+    int getStatisticsIntervalTicks() {
+        return session.getStatisticsIntervalTicks();
+    }
+
+    int getStatisticsHistoryCapacity() {
+        return session.getStatisticsHistoryCapacity();
     }
 
     private void drawFoods(JavaFxViewer viewer) {
