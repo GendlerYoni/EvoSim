@@ -1,6 +1,8 @@
 
 package io.github.gendleryoni.evosim;
 
+import io.github.gendleryoni.evosim.statistics.StatisticsBatch;
+
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.List;
 
@@ -165,6 +167,18 @@ public class SimulationSession {
         // Keep the current speed multiplier.
     }
 
+    public StatisticsBatch getStatisticsFromIndex(int fromIndex) {
+        return engine.getStatisticsFromIndex(fromIndex);
+    }
+
+    public int getStatisticsIntervalTicks() {
+        return engine.getStatisticsIntervalTicks();
+    }
+
+    public int getStatisticsHistoryCapacity() {
+        return engine.getStatisticsHistoryCapacity();
+    }
+
     private boolean isExtinct() {
         World world = engine.getWorld();
 
@@ -173,6 +187,7 @@ public class SimulationSession {
                 && world.getHerbivoreEggs().isEmpty()
                 && world.getPredatorEggs().isEmpty();
     }
+
 
     public long getTickCount() {
         return engine.getTickCount();

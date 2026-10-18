@@ -1,8 +1,14 @@
 
 package io.github.gendleryoni.evosim;
 
+import io.github.gendleryoni.evosim.statistics.StatisticsCalculator;
+import io.github.gendleryoni.evosim.statistics.SimulationSnapshot;
+import io.github.gendleryoni.evosim.statistics.StatisticsBatch;
+
 import java.util.List;
 import java.util.Random;
+import java.util.ArrayList;
+
 
 public class SimulationEngine {
 
@@ -21,6 +27,11 @@ public class SimulationEngine {
 
     private static final double EGG_SPECIES_MUTATION_CHANCE = 0.05;
 
+    private static final int STATISTICS_INTERVAL_TICKS = 50;
+    private static final int STATISTICS_HISTORY_TICKS = 10_000;
+    private static final int STATISTICS_HISTORY_CAPACITY =
+            STATISTICS_HISTORY_TICKS / STATISTICS_INTERVAL_TICKS + 1;
+
     private final SimulationConfig config;
     private final World world;
     private final Random random;
@@ -30,6 +41,16 @@ public class SimulationEngine {
 
     private long tickCount;
     private int nextCreatureId;
+
+    private final StatisticsCalculator statisticsCalculator =
+            new StatisticsCalculator();
+
+    private final SimulationSnapshot[] statisticsHistory =
+            new SimulationSnapshot[STATISTICS_HISTORY_CAPACITY];
+
+    private final Object statisticsLock = new Object();
+
+    private int nextSampleIndex = 0;
 
     public SimulationEngine(SimulationConfig config) {
         if (config == null) {
@@ -57,6 +78,36 @@ public class SimulationEngine {
         this.nextCreatureId = 1;
 
         initializeSimulation();
+    }
+
+    public StatisticsBatch getStatisticsFromIndex(int fromIndex) {
+        synchronized (statisticsLock) {
+
+            if (fromIndex < 0 || fromIndex > nextSampleIndex) {
+                throw new IndexOutOfBoundsException(
+                        "Invalid statistics sample index: " + fromIndex
+                );
+            }
+
+            int oldestAvailableIndex = Math.max(
+                    0,
+                    nextSampleIndex - STATISTICS_HISTORY_CAPACITY
+            );
+
+            int startIndex = Math.max(
+                    fromIndex,
+                    oldestAvailableIndex
+            );
+
+            List<SimulationSnapshot> snapshots = new ArrayList<>();
+
+            for (int i = startIndex; i < nextSampleIndex; i++) {
+                int arrayIndex = i % STATISTICS_HISTORY_CAPACITY;
+                snapshots.add(statisticsHistory[arrayIndex]);
+            }
+
+            return new StatisticsBatch(nextSampleIndex, snapshots);
+        }
     }
 
     private void initializeSimulation() {
@@ -178,6 +229,10 @@ public class SimulationEngine {
 
         int predatorEggsAtTickStart =
                 world.getPredatorEggs().size();
+
+        if (tickCount % STATISTICS_INTERVAL_TICKS == 0) {
+            saveSnapshot();
+        }
 
         resolvePredation();
 
@@ -741,6 +796,20 @@ public class SimulationEngine {
         }
     }
 
+    private void saveSnapshot() {
+        SimulationSnapshot snapshot =
+                statisticsCalculator.calculate(world);
+
+        synchronized (statisticsLock) {
+            int index =
+                    nextSampleIndex % STATISTICS_HISTORY_CAPACITY;
+
+            statisticsHistory[index] = snapshot;
+
+            nextSampleIndex++;
+        }
+    }
+
     public long getTickCount() {
         return tickCount;
     }
@@ -759,5 +828,13 @@ public class SimulationEngine {
 
     public double getTickDurationSeconds() {
         return TICK_DURATION_SECONDS;
+    }
+
+    public int getStatisticsIntervalTicks() {
+        return STATISTICS_INTERVAL_TICKS;
+    }
+
+    public int getStatisticsHistoryCapacity() {
+        return STATISTICS_HISTORY_CAPACITY;
     }
 }

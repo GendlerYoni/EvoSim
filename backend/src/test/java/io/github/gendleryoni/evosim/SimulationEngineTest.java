@@ -1,5 +1,8 @@
 package io.github.gendleryoni.evosim;
 
+import io.github.gendleryoni.evosim.statistics.SimulationSnapshot;
+import io.github.gendleryoni.evosim.statistics.StatisticsBatch;
+
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -1531,5 +1534,293 @@ class SimulationEngineTest {
         assertEquals(9999, engine.getWorld().getHerbivoreEggs().size());
         assertEquals(1, engine.getWorld().getHerbivores().size());
     }
+
+
+    // ---------------------------------------------------------------------
+    // M13 - Statistics history and circular buffer
+    // ---------------------------------------------------------------------
+
+    @Test
+    void statisticsHistoryIsEmptyBeforeFirstTick() {
+        SimulationEngine engine =
+                new SimulationEngine(createDefaultConfig());
+
+        StatisticsBatch batch = engine.getStatisticsFromIndex(0);
+
+        assertTrue(batch.snapshots().isEmpty());
+        assertEquals(0, batch.nextSampleIndex());
+
+        engine.tick();
+
+        StatisticsBatch afterTick = engine.getStatisticsFromIndex(0);
+
+        assertEquals(1, afterTick.snapshots().size());
+        assertEquals(1, afterTick.nextSampleIndex());
+    }
+
+    @Test
+    void firstSnapshotCapturesWorldBeforeTickProcessing() {
+        SimulationEngine engine =
+                new SimulationEngine(createDefaultConfig());
+
+        Genome genome = createGenome(2.0, 1.0);
+
+        createHerbivore(
+                engine, 500.0, 400.0, 100.0,
+                genome, Direction.NORTH
+        );
+
+        // This food will be eaten during the first tick.
+        engine.getWorld().addFood(500.0, 400.0);
+
+        engine.tick();
+
+        SimulationSnapshot snapshot =
+                engine.getStatisticsFromIndex(0).snapshots().get(0);
+
+        assertEquals(1, snapshot.population().herbivores());
+        assertEquals(0, snapshot.population().predators());
+        assertEquals(1, snapshot.population().food());
+
+        assertNotNull(snapshot.herbivores());
+        assertNull(snapshot.predators());
+
+        // The world changed after the snapshot was captured.
+        assertTrue(engine.getWorld().getFoods().isEmpty());
+    }
+
+    @Test
+    void samplesOnlyAtConfiguredTickIntervals() {
+        SimulationEngine engine =
+                new SimulationEngine(createDefaultConfig());
+
+        int interval = engine.getStatisticsIntervalTicks();
+
+        assertTrue(interval > 0);
+
+        // First tick creates the snapshot for Tick 0.
+        engine.tick();
+
+        assertEquals(
+                1,
+                engine.getStatisticsFromIndex(0).snapshots().size()
+        );
+
+        // Complete the remaining ticks up to Tick 50
+        // (or the configured interval).
+        for (int i = 1; i < interval; i++) {
+            engine.tick();
+        }
+
+        assertEquals(interval, engine.getTickCount());
+
+        // Tick 50 snapshot has not been captured yet.
+        assertEquals(
+                1,
+                engine.getStatisticsFromIndex(0).snapshots().size()
+        );
+
+        // The next call captures the snapshot for Tick 50.
+        engine.tick();
+
+        assertEquals(
+                2,
+                engine.getStatisticsFromIndex(0).snapshots().size()
+        );
+
+        assertEquals(2, engine.getStatisticsFromIndex(0).nextSampleIndex());
+    }
+
+    @Test
+    void returnsOnlySnapshotsFromRequestedIndex() {
+        SimulationEngine engine =
+                new SimulationEngine(createDefaultConfig());
+
+        int interval = engine.getStatisticsIntervalTicks();
+
+        // Generate snapshots at Tick 0 and Tick 'interval'.
+        for (int i = 0; i <= interval; i++) {
+            engine.tick();
+        }
+
+        StatisticsBatch all = engine.getStatisticsFromIndex(0);
+        StatisticsBatch newOnly = engine.getStatisticsFromIndex(1);
+        StatisticsBatch none = engine.getStatisticsFromIndex(2);
+
+        assertEquals(2, all.snapshots().size());
+        assertEquals(2, all.nextSampleIndex());
+
+        assertEquals(1, newOnly.snapshots().size());
+        assertEquals(2, newOnly.nextSampleIndex());
+
+        assertTrue(none.snapshots().isEmpty());
+        assertEquals(2, none.nextSampleIndex());
+
+        assertEquals(
+                all.snapshots().get(1),
+                newOnly.snapshots().get(0)
+        );
+    }
+
+    @Test
+    void rejectsInvalidStatisticsIndices() {
+        SimulationEngine engine =
+                new SimulationEngine(createDefaultConfig());
+
+        assertThrows(
+                IndexOutOfBoundsException.class,
+                () -> engine.getStatisticsFromIndex(-1)
+        );
+
+        assertThrows(
+                IndexOutOfBoundsException.class,
+                () -> engine.getStatisticsFromIndex(1)
+        );
+
+        engine.tick();
+
+        assertThrows(
+                IndexOutOfBoundsException.class,
+                () -> engine.getStatisticsFromIndex(2)
+        );
+
+        // Index equal to nextSampleIndex is valid.
+        StatisticsBatch batch = engine.getStatisticsFromIndex(1);
+
+        assertTrue(batch.snapshots().isEmpty());
+        assertEquals(1, batch.nextSampleIndex());
+    }
+
+    @Test
+    void circularBufferKeepsOnlyNewestSnapshotsInOrder() {
+        SimulationEngine engine =
+                new SimulationEngine(createDefaultConfig());
+
+        int capacity = engine.getStatisticsHistoryCapacity();
+        int interval = engine.getStatisticsIntervalTicks();
+
+        assertEquals(
+                10_000 / interval + 1,
+                capacity
+        );
+
+        int totalSamples = capacity + 3;
+        Food activeFood = null;
+
+        for (int sample = 0; sample < totalSamples; sample++) {
+
+            // Alternate between 1 and 0 food items
+            // so we can verify chronological order.
+            if (sample % 2 == 0) {
+                activeFood = engine.getWorld().addFood(300, 300);
+            } else {
+                engine.getWorld().removeFood(activeFood);
+                activeFood = null;
+            }
+
+            for (int tick = 0; tick < interval; tick++) {
+                engine.tick();
+            }
+        }
+
+        StatisticsBatch batch = engine.getStatisticsFromIndex(0);
+
+        // Only the newest 'capacity' samples survive.
+        assertEquals(capacity, batch.snapshots().size());
+        assertEquals(totalSamples, batch.nextSampleIndex());
+
+        int oldestAvailableIndex = totalSamples - capacity;
+
+        // Verify all returned samples are chronologically ordered.
+        for (int i = 0; i < capacity; i++) {
+            int sampleIndex = oldestAvailableIndex + i;
+            int expectedFood = sampleIndex % 2 == 0 ? 1 : 0;
+
+            assertEquals(
+                    expectedFood,
+                    batch.snapshots().get(i).population().food(),
+                    "Wrong food count at sample index " + sampleIndex
+            );
+        }
+
+        // Requesting an overwritten index skips to oldest available.
+        StatisticsBatch skipped = engine.getStatisticsFromIndex(1);
+
+        assertEquals(capacity, skipped.snapshots().size());
+        assertEquals(totalSamples, skipped.nextSampleIndex());
+
+        // Requesting the last two samples returns exactly two.
+        StatisticsBatch lastTwo =
+                engine.getStatisticsFromIndex(totalSamples - 2);
+
+        assertEquals(2, lastTwo.snapshots().size());
+        assertEquals(totalSamples, lastTwo.nextSampleIndex());
+    }
+
+    @Test
+    void returnedStatisticsBatchIsIndependentOfFutureUpdates() {
+        SimulationEngine engine =
+                new SimulationEngine(createDefaultConfig());
+
+        engine.tick();
+
+        StatisticsBatch original = engine.getStatisticsFromIndex(0);
+
+        assertEquals(1, original.snapshots().size());
+        assertEquals(0, original.snapshots().get(0).population().food());
+
+        engine.getWorld().addFood(300, 300);
+
+        int interval = engine.getStatisticsIntervalTicks();
+
+        for (int i = 0; i < interval; i++) {
+            engine.tick();
+        }
+
+        // The previously returned batch must remain unchanged.
+        assertEquals(1, original.snapshots().size());
+        assertEquals(1, original.nextSampleIndex());
+        assertEquals(0, original.snapshots().get(0).population().food());
+
+        StatisticsBatch latest = engine.getStatisticsFromIndex(1);
+
+        assertEquals(1, latest.snapshots().size());
+        assertEquals(1, latest.snapshots().get(0).population().food());
+
+        assertThrows(
+                UnsupportedOperationException.class,
+                () -> original.snapshots().clear()
+        );
+    }
+
+    @Test
+    void sameSeedProducesIdenticalStatisticsHistory() {
+        SimulationConfig config =
+                createConfig(98765L, 2, 1, 10);
+
+        SimulationEngine first = new SimulationEngine(config);
+        SimulationEngine second = new SimulationEngine(config);
+
+        int ticks = first.getStatisticsIntervalTicks() * 2 + 1;
+
+        for (int i = 0; i < ticks; i++) {
+            first.tick();
+            second.tick();
+        }
+
+        StatisticsBatch firstBatch = first.getStatisticsFromIndex(0);
+        StatisticsBatch secondBatch = second.getStatisticsFromIndex(0);
+
+        assertEquals(
+                firstBatch.nextSampleIndex(),
+                secondBatch.nextSampleIndex()
+        );
+
+        assertEquals(
+                firstBatch.snapshots(),
+                secondBatch.snapshots()
+        );
+    }
+
 
 }
