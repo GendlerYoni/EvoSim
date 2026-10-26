@@ -1469,9 +1469,11 @@ class SimulationEngineTest {
     }
     // M11 - Engine-level limits. Food cap is not a SimulationConfig validation.
     @Test
-    void rejectsInitialFoodAboveEngineCap() {
-        SimulationConfig config = createConfig(12345L, 0, 5001);
-        assertThrows(IllegalArgumentException.class, () -> new SimulationEngine(config));
+    void rejectsInitialFoodAboveConfigLimit() {
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> createConfig(12345L, 0, 5001)
+        );
     }
 
     @Test
