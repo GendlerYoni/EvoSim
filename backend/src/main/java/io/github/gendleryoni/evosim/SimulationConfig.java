@@ -3,9 +3,10 @@ package io.github.gendleryoni.evosim;
 
 public class SimulationConfig {
 
-    private static final int MAX_INITIAL_HERBIVORES = 1000;
-    private static final int MAX_INITIAL_PREDATORS = 1000;
-    private static final int MAX_FOOD_SPAWN_PER_TICK = 100;
+    public static final int MAX_INITIAL_HERBIVORES = 1000;
+    public static final int MAX_INITIAL_PREDATORS = 1000;
+    public static final int MAX_INITIAL_FOOD = 5000;
+    public static final int MAX_FOOD_SPAWN_PER_TICK = 100;
 
     private final Genome initialGenome;
     private final int initialHerbivores;
@@ -44,9 +45,10 @@ public class SimulationConfig {
             );
         }
 
-        if (initialFood < 0) {
+        if (initialFood < 0 || initialFood > MAX_INITIAL_FOOD) {
             throw new IllegalArgumentException(
-                    "Initial food count cannot be negative"
+                    "Initial food count must be between 0 and "
+                            + MAX_INITIAL_FOOD
             );
         }
 
