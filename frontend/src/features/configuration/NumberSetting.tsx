@@ -1,5 +1,5 @@
 
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 type NumberSettingProps = {
     label: string
@@ -8,6 +8,7 @@ type NumberSettingProps = {
     max: number
     onChange: (value: string) => void
     error?: string
+    disabled?: boolean
 }
 
 const HOLD_DELAY_MS = 400
@@ -19,8 +20,10 @@ function NumberSetting({
     min,
     max,
     onChange,
-    error
+    error,
+    disabled = false
 }: NumberSettingProps) {
+
     // State and refs
     const [notice, setNotice] = useState('')
 
@@ -29,32 +32,51 @@ function NumberSetting({
     const holdIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
     const didHoldRef = useRef(false)
 
-    // Keep the ref synchronized with the value from the parent
+    // Keep the ref synchronized with the value from the parent.
     useEffect(() => {
         latestValueRef.current = value
     }, [value])
 
-    // Clean up timers when the component unmounts
-    useEffect(() => {
-        return () => {
-            if (holdTimeoutRef.current !== null) {
-                clearTimeout(holdTimeoutRef.current)
-            }
+    // Stop all active press-and-hold timers.
+    const stopHold = useCallback(() => {
+        if (holdTimeoutRef.current !== null) {
+            clearTimeout(holdTimeoutRef.current)
+            holdTimeoutRef.current = null
+        }
 
-            if (holdIntervalRef.current !== null) {
-                clearInterval(holdIntervalRef.current)
-            }
+        if (holdIntervalRef.current !== null) {
+            clearInterval(holdIntervalRef.current)
+            holdIntervalRef.current = null
         }
     }, [])
 
+    // Clean up timers when the component unmounts.
+    useEffect(() => {
+        return () => {
+            stopHold()
+        }
+    }, [stopHold])
+
+    // Stop active timers when the setting becomes disabled.
+    useEffect(() => {
+        if (disabled) {
+            stopHold()
+            didHoldRef.current = false
+        }
+    }, [disabled, stopHold])
+
     // Value updates
     function updateValue(newValue: string, newNotice = '') {
+        if (disabled) return
+
         latestValueRef.current = newValue
         setNotice(newNotice)
         onChange(newValue)
     }
 
     function handleTextChange(rawValue: string) {
+        if (disabled) return
+
         if (rawValue === '') {
             updateValue('')
             return
@@ -78,6 +100,8 @@ function NumberSetting({
     }
 
     function changeBy(delta: number) {
+        if (disabled) return
+
         const currentValue = latestValueRef.current
         const current = Number(currentValue)
 
@@ -91,19 +115,9 @@ function NumberSetting({
     }
 
     // Press-and-hold behavior
-    function stopHold() {
-        if (holdTimeoutRef.current !== null) {
-            clearTimeout(holdTimeoutRef.current)
-            holdTimeoutRef.current = null
-        }
-
-        if (holdIntervalRef.current !== null) {
-            clearInterval(holdIntervalRef.current)
-            holdIntervalRef.current = null
-        }
-    }
-
     function startHold(delta: number) {
+        if (disabled) return
+
         stopHold()
         didHoldRef.current = false
 
@@ -120,6 +134,8 @@ function NumberSetting({
     }
 
     function handleClick(delta: number, isKeyboardClick: boolean) {
+        if (disabled) return
+
         if (isKeyboardClick || !didHoldRef.current) {
             changeBy(delta)
         }
@@ -135,7 +151,10 @@ function NumberSetting({
                     type="text"
                     inputMode="numeric"
                     value={value}
-                    onChange={(event) => handleTextChange(event.currentTarget.value)}
+                    disabled={disabled}
+                    onChange={(event) =>
+                        handleTextChange(event.currentTarget.value)
+                    }
                 />
             </label>
 
@@ -148,14 +167,20 @@ function NumberSetting({
                 max={max}
                 step={1}
                 value={value}
+                disabled={disabled}
                 aria-label={`${label} slider`}
-                onChange={(event) => updateValue(event.currentTarget.value)}
+                onChange={(event) =>
+                    updateValue(event.currentTarget.value)
+                }
             />
 
             <button
                 type="button"
+                disabled={disabled}
                 aria-label={`Decrease ${label}`}
-                onClick={(event) => handleClick(-1, event.detail === 0)}
+                onClick={(event) =>
+                    handleClick(-1, event.detail === 0)
+                }
                 onPointerDown={(event) => {
                     if (event.isPrimary && event.button === 0) {
                         startHold(-1)
@@ -170,8 +195,11 @@ function NumberSetting({
 
             <button
                 type="button"
+                disabled={disabled}
                 aria-label={`Increase ${label}`}
-                onClick={(event) => handleClick(1, event.detail === 0)}
+                onClick={(event) =>
+                    handleClick(1, event.detail === 0)
+                }
                 onPointerDown={(event) => {
                     if (event.isPrimary && event.button === 0) {
                         startHold(1)
