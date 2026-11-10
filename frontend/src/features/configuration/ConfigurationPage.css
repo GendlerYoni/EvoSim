@@ -1,101 +1,139 @@
 
 .configuration-page {
-  max-width: 760px;
-  margin: 48px auto;
-  padding: 32px;
-  font-family: Arial, sans-serif;
-  color: #24352b;
+    max-width: 760px;
+    margin: 48px auto;
+    padding: 32px;
+    font-family: Arial, sans-serif;
+    color: #24352b;
 }
 
 .configuration-page h1 {
-  text-align: center;
-  margin-bottom: 32px;
+    text-align: center;
+    margin-bottom: 32px;
 }
 
 .configuration-page h2 {
-  margin: 28px 0 16px;
-  font-size: 20px;
+    margin: 28px 0 16px;
+    font-size: 20px;
 }
 
-.configuration-page form > div,
-.configuration-page section > div {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 12px;
-  padding: 20px;
-  margin-bottom: 12px;
-  background: white;
-  border: 1px solid #dce5de;
-  border-radius: 12px;
+/* Fieldset - contains all configuration controls */
+.configuration-fieldset {
+    border: 0;
+    padding: 0;
+    margin: 0;
+    min-width: 0;
+    width: 100%;
+    box-sizing: border-box;
 }
 
+/* Configuration setting cards */
+.configuration-fieldset > div,
+.configuration-fieldset > section > div {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 20px;
+    margin-bottom: 12px;
+    background: white;
+    border: 1px solid #dce5de;
+    border-radius: 12px;
+}
+
+/* Setting labels */
 .configuration-page label {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  width: 100%;
-  font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    width: 100%;
+    font-weight: 600;
 }
 
+/* Numeric text inputs */
 .configuration-page input[type="text"] {
-  width: 90px;
-  padding: 8px;
-  border: 1px solid #bdcfc1;
-  border-radius: 6px;
-  font-size: 15px;
-  text-align: center;
+    width: 90px;
+    padding: 8px;
+    border: 1px solid #bdcfc1;
+    border-radius: 6px;
+    font-size: 15px;
+    text-align: center;
 }
 
+/* Sliders */
 .configuration-page input[type="range"] {
-  flex: 1;
-  min-width: 100px;
-  accent-color: #438b5d;
+    flex: 1;
+    min-width: 100px;
+    accent-color: #438b5d;
 }
 
+/* General buttons */
 .configuration-page button {
-  cursor: pointer;
-  padding: 8px 12px;
-  border: 1px solid #cbd8cd;
-  border-radius: 6px;
-  background: #f4f7f4;
-  font-size: 14px;
+    cursor: pointer;
+    padding: 8px 12px;
+    border: 1px solid #cbd8cd;
+    border-radius: 6px;
+    background: #f4f7f4;
+    font-size: 14px;
 }
 
-.configuration-page button:hover {
-  background: #e5eee6;
+.configuration-page button:not(:disabled):hover {
+    background: #e5eee6;
 }
 
-.configuration-page form > button {
-  display: block;
-  width: 100%;
-  margin-top: 12px;
-  padding: 12px;
+/* Reset and Start buttons */
+.configuration-fieldset > button {
+    display: block;
+    width: 100%;
+    margin-top: 12px;
+    padding: 12px;
 }
 
-.configuration-page form > button[type="submit"] {
-  background: #438b5d;
-  color: white;
-  border: none;
-  font-weight: bold;
+/* Start Simulation button */
+.configuration-fieldset > button[type="submit"] {
+    background: #438b5d;
+    color: white;
+    border: none;
+    font-weight: bold;
 }
 
-.configuration-page form > button[type="submit"]:hover {
-  background: #347448;
+.configuration-fieldset > button[type="submit"]:not(:disabled):hover {
+    background: #347448;
 }
 
+/* Disabled controls during loading */
+.configuration-page button:disabled {
+    cursor: not-allowed;
+    opacity: 0.65;
+}
+
+.configuration-page input:disabled {
+    cursor: not-allowed;
+    opacity: 0.65;
+}
+
+/* Validation and status messages */
 .configuration-page p[role="alert"],
 .configuration-page p[role="status"] {
-  width: 100%;
-  margin: 0;
-  font-size: 13px;
+    width: 100%;
+    margin: 0;
+    font-size: 13px;
 }
 
 .configuration-page p[role="alert"] {
-  color: #c0392b;
+    color: #c0392b;
 }
 
 .configuration-page p[role="status"] {
-  color: #66776a;
+    color: #66776a;
+}
+
+.configuration-request-error {
+    padding: 12px;
+    margin: 12px 0;
+    border: 1px solid #c0392b;
+    border-radius: 6px;
+    background: #fff1f0;
+    color: #c0392b;
 }

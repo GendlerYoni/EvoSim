@@ -42,6 +42,38 @@ function renderNumberSetting(
 }
 
 describe('NumberSetting', () => {
+
+    it('disables all controls when disabled is true', () => {
+        const onChange = vi.fn()
+
+        render(
+            <NumberSetting
+                label="Test Setting"
+                value="5"
+                min={0}
+                max={10}
+                onChange={onChange}
+                disabled={true}
+            />
+        )
+
+        expect(screen.getByRole('textbox')).toBeDisabled()
+        expect(screen.getByRole('slider')).toBeDisabled()
+        expect(
+            screen.getByRole('button', { name: 'Increase Test Setting' })
+        ).toBeDisabled()
+        expect(
+            screen.getByRole('button', { name: 'Decrease Test Setting' })
+        ).toBeDisabled()
+
+        fireEvent.click(
+            screen.getByRole('button', { name: 'Increase Test Setting' })
+        )
+
+        expect(onChange).not.toHaveBeenCalled()
+    })
+
+
     it('renders the initial value', () => {
         const { input, slider } = renderNumberSetting('5')
 
@@ -131,6 +163,55 @@ describe('NumberSetting', () => {
     })
 
     describe('NumberSetting press-and-hold', () => {
+
+        it('stops an active hold when the component becomes disabled', () => {
+            const onChange = vi.fn()
+
+            const { rerender } = render(
+                <NumberSetting
+                    label="Test Setting"
+                    value="5"
+                    min={0}
+                    max={10}
+                    onChange={onChange}
+                    disabled={false}
+                />
+            )
+
+            const increaseButton = screen.getByRole('button', {
+                name: 'Increase Test Setting'
+            })
+
+            fireEvent.pointerDown(increaseButton, {
+                button: 0,
+                isPrimary: true
+            })
+
+            act(() => {
+                vi.advanceTimersByTime(400)
+            })
+
+            expect(onChange).toHaveBeenCalledTimes(1)
+
+            rerender(
+                <NumberSetting
+                    label="Test Setting"
+                    value="5"
+                    min={0}
+                    max={10}
+                    onChange={onChange}
+                    disabled={true}
+                />
+            )
+
+            expect(vi.getTimerCount()).toBe(0)
+
+            act(() => {
+                vi.advanceTimersByTime(500)
+            })
+
+            expect(onChange).toHaveBeenCalledTimes(1)
+        })
         beforeEach(() => {
             vi.useFakeTimers()
         })
